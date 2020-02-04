@@ -16,17 +16,31 @@ def simulator(num_nodes=10, num_packets=3, num_slots=10, sim_end_time=10):
     Returns:
         [type] -- [description]
     """
-    simTime = list()
+    # Asserts
+    assert (num_nodes > 0)
+    assert num_packets > 0
+    assert num_slots > 0
+    assert sim_end_time > 0
+    # Variables
     state_id = list(range(0, 3))
-    poisson_lambda = sim_end_time / 2
+
+    # Program
     # state_id values - 0: carrier sense, 1: transmitting, 2: tx end
     events = generate_events(
         num_nodes=num_nodes, num_packets=num_packets, sim_end_time=sim_end_time)
+    simEvents = update_event_counter(events=events)
+
+    print('Simulation has completed.')
     return events
     # return perf_metric_1, perf_metric_2, perf_metric_3
 
 # def packet_time_generator(total_time)
 # %%
+
+
+def update_event_counter(events=generate_events()):
+    simEvents = np.unique(events)
+    return simEvents
 
 
 def generate_events(num_nodes=10, num_packets=3, sim_end_time=10):
@@ -37,6 +51,6 @@ def generate_events(num_nodes=10, num_packets=3, sim_end_time=10):
     return events
 
 
-    # %%
+# %%
 a = simulator()
 print(a)
