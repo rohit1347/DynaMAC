@@ -13,6 +13,8 @@ def simulator(num_nodes=10, num_packets=3, num_slots=10, sim_end_time=10, packet
         num_packets {int} -- Number of packets at each node. Time/event instant at which packet must become available must be random/programmable. (default: {10})
         num_slots {int} -- If slot based structure is being used for MAC protocol, number of slots. (default: {10})
         sim_end_time {int} -- [description] (default: {10})
+        packet_time {float} -- [description] (default: {0.01})
+        pflag {int} -- [description] (default: {0})
 
     Returns:
         [type] -- [description]
@@ -80,11 +82,21 @@ def simulator(num_nodes=10, num_packets=3, num_slots=10, sim_end_time=10, packet
     return latency, packet_success_ratio
 
 
-# def packet_time_generator(total_time)
-a  # %%
+# %%
 
 
 def generate_events(num_nodes=10, num_packets=3, sim_end_time=10, event_resolution=0.5):
+    """Generates a single events and states matrix by appending.
+
+    Keyword Arguments:
+        num_nodes {int} -- Number of nodes in the simulation (default: {10})
+        num_packets {int} -- Number of packets per node (default: {3})
+        sim_end_time {int} -- Simulation end time (default: {10})
+        event_resolution {float} -- Lambda for exponential function (default: {0.5})
+
+    Returns:
+        Numpy array -- Dimensions are [2,num_nodes*num_packets]. First row stores the event times and second row stores the state IDs.
+    """
     events = np.random.exponential(
         scale=event_resolution, size=(num_packets, num_nodes))
     events = events.flatten()
@@ -95,9 +107,15 @@ def generate_events(num_nodes=10, num_packets=3, sim_end_time=10, event_resoluti
 
 
 def sort_events(events):
+    """Sorts the 'events' numpy array according to the event time (first row).
+
+    Arguments:
+        events {numpy array} -- First row - event times, second row - state IDs
+
+    Returns:
+        Numpy array -- Sorted 'events' numpy array
+    """
     assert events.shape[0] == 2
-    # events[0, :] = roundoff_events(events[0, :])
-    # print(events)
     sort_idx = np.argsort(events[0, :])
 
     events = events[:, sort_idx]
@@ -112,12 +130,31 @@ def generate_backoff(backoff_resolutiton):
 
 
 def remove_event(events, idx):
+    """Removes event from the event array from a particular column index (event ID).
+
+    Arguments:
+        events {numpy array} -- First row - event times, second row - state IDs.
+        idx {int} -- Event ID which has to be removed.
+
+    Returns:
+        Numpy array -- 'Events' numpy array with removed column
+    """
     assert events.shape[0] == 2
     events = np.delete(events, idx, axis=1)
     return events
 
 
 def append_event(events, newTime, newState):
+    """Appends new event
+
+    Arguments:
+        events {numpy array} -- First row - event times, second row - state IDs.
+        newTime {float or numpy array} -- Time ID
+        newState {int} -- State ID corresponding to the Time ID
+
+    Returns:
+        [type] -- [description]
+    """
     assert events.shape[0] == 2
     events = np.append(events, np.array([[newTime], [newState]]), axis=1)
     return events
@@ -129,7 +166,3 @@ def roundoff_events(events, round=1):
 
 # %%
 a = simulator()
-# print(a)
-
-
-# %%
