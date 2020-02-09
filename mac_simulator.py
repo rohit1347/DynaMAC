@@ -22,13 +22,23 @@ def simulator(num_nodes=10, num_packets=3, num_slots=10, sim_end_time=10):
     assert num_slots > 0
     assert sim_end_time > 0
     # Variables
-    state_id = list(range(0, 3))
-
-    # Program
+    state_id = [0, 0]
     # state_id values - 0: carrier sense, 1: transmitting, 2: tx end
+    # Program
+
     events = generate_events(
         num_nodes=num_nodes, num_packets=num_packets, sim_end_time=sim_end_time)
+    print(f'SimEvents={simEvents}')
     simEvents = update_event_counter(events=events)
+    for event_id, event in simEvents:
+        if state_id[0] = 0:
+            simEvents[]
+        elif state_id = 1:
+            pass
+        elif state_id = 2:
+            pass
+        else:
+            print("Wrong AP state")
 
     print('Simulation has completed.')
     return events
@@ -38,19 +48,26 @@ def simulator(num_nodes=10, num_packets=3, num_slots=10, sim_end_time=10):
 # %%
 
 
-def update_event_counter(events=generate_events()):
-    simEvents = np.unique(events)
-    return simEvents
-
-
 def generate_events(num_nodes=10, num_packets=3, sim_end_time=10):
-    poisson_lambda = sim_end_time / 2
-    events = np.random.poisson(
-        lam=poisson_lambda, size=(num_packets, num_nodes))
+    events = np.random.exponential(
+        scale=0.1, size=(num_packets, num_nodes))
     events[events > sim_end_time] = 0
     return events
 
 
-# %%
+def update_event_counter(events=generate_events()):
+    simEvents = np.unique(events)
+    # By putting axis=0, we find unique numbers across each row.
+    # Expected to preserve shape of the input.
+    return simEvents
+
+
+def generate_backoff():
+    pass
+
+    # %%
 a = simulator()
-print(a)
+# print(a)
+
+
+# %%
