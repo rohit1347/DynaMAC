@@ -28,7 +28,8 @@ def simulator(num_nodes=10, num_packets=3, num_slots=10, sim_end_time=10, packet
     # state_id values - 0: carrier sense, 1: transmitting, 2: tx end
     packet_time = packet_time
     sent_packets = 0
-    total_packets = num_packets * num_slots
+    total_packets = num_packets * num_nodes
+    print(total_packets)
     total_backoff_time = 0
     total_backoffs = 0
     # packet time units - seconds
