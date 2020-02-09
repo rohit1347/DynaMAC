@@ -5,7 +5,7 @@ import pdb
 # %%
 
 
-def simulator(num_nodes=10, num_packets=3, num_slots=10, sim_end_time=10, packet_time=0.01):
+def simulator(num_nodes=10, num_packets=3, num_slots=10, sim_end_time=10, packet_time=0.01, pflag=0):
     """Function for implementing the event based simulator.
 
     Keyword Arguments:
@@ -37,16 +37,17 @@ def simulator(num_nodes=10, num_packets=3, num_slots=10, sim_end_time=10, packet
         num_nodes=num_nodes, num_packets=num_packets, sim_end_time=sim_end_time, event_resolution=10 * packet_time)
     sim_end_check = simEvents[0, :] > sim_end_time
     while (simEvents.shape[1] > 0 and not sim_end_check.all()):
-        print(f'SimEvents={simEvents}')
+        if pflag:
+            print(f'SimEvents={simEvents[1,:]}')
+            print(f'SimTime={simEvents[0,:]}')
         curEvent = simEvents[1, 0]
         curTime = simEvents[0, 0]
         if curEvent == 0:
             simEvents = append_event(simEvents, curTime+packet_time, 2)
             simEvents = remove_event(simEvents, 0)
-
             busy_states = np.logical_and(
                 simEvents[0, :] >= curTime, simEvents[0, :] < simEvents[0, -1])
-            simEvents[1, busy_states] = 1
+            simEvents[1, busy_states.flatten()] = 1
             simEvents = sort_events(simEvents)
             sent_packets += 1
         elif curEvent == 1:
@@ -58,7 +59,6 @@ def simulator(num_nodes=10, num_packets=3, num_slots=10, sim_end_time=10, packet
             while new_state_added_flag < 1:
                 backoff += generate_backoff(10 * packet_time)
                 newTime = curTime + backoff
-                pdb.set_trace()
                 end_time_check = endTime < newTime
                 if end_time_check:
                     simEvents = append_event(simEvents, newTime, 0)
@@ -69,16 +69,19 @@ def simulator(num_nodes=10, num_packets=3, num_slots=10, sim_end_time=10, packet
             total_backoff_time += backoff
             total_backoffs += 1
             simEvents = remove_event(simEvents, 0)
+
         elif curEvent == 2:
             simEvents = remove_event(simEvents, 0)
         sim_end_check = simEvents[0, :] > sim_end_time
     latency = total_backoff_time / total_backoffs
     packet_success_ratio = sent_packets/total_packets
-    print('Simulation has completed.')
+    print(
+        f'Simulation has completed. Average latency={latency}s, PSR= {packet_success_ratio} ')
     return latency, packet_success_ratio
 
+
 # def packet_time_generator(total_time)
-# %%
+a  # %%
 
 
 def generate_events(num_nodes=10, num_packets=3, sim_end_time=10, event_resolution=0.5):
@@ -93,8 +96,10 @@ def generate_events(num_nodes=10, num_packets=3, sim_end_time=10, event_resoluti
 
 def sort_events(events):
     assert events.shape[0] == 2
-    events[0, :] = roundoff_events(events[0, :])
+    # events[0, :] = roundoff_events(events[0, :])
+    # print(events)
     sort_idx = np.argsort(events[0, :])
+
     events = events[:, sort_idx]
     return events
 
@@ -102,6 +107,7 @@ def sort_events(events):
 def generate_backoff(backoff_resolutiton):
     backoff = np.random.exponential(size=(1, 1), scale=backoff_resolutiton)
     backoff = roundoff_events(backoff)
+    backoff = backoff[0, 0]
     return backoff
 
 
