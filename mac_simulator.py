@@ -1,6 +1,7 @@
 # %%
 # Add imports
 import numpy as np
+import pdb
 
 # %%
 
@@ -14,7 +15,7 @@ def simulator(num_nodes=10, num_packets=3, sim_end_time=10, packet_time=0.01, pf
         sim_end_time {int} -- [description] (default: {10})
         packet_time {float} -- [description] (default: {0.01})
         pflag {int} -- [description] (default: {0})
-        simEvents {numpy array} -- First row - event times, second row - state IDs
+        simEvents {numpy array} -- First row - event times, second row - state IDs, third row - packet IDs
 
     Returns:
         [type] -- [description]
@@ -29,21 +30,30 @@ def simulator(num_nodes=10, num_packets=3, sim_end_time=10, packet_time=0.01, pf
     total_packets = num_packets * num_nodes
     total_backoff_time = 0
     total_backoffs = 0
+
     # packet time units - seconds
 
     # Program
     if type(simEvents) != 'numpy.ndarray':
         simEvents = generate_events(
             num_nodes=num_nodes, num_packets=num_packets, sim_end_time=sim_end_time, event_resolution=10 * packet_time)
+    eligible_packets = np.sum(simEvents[0, :] <= sim_end_time)
+    latency_array = [0]*simEvents.shape[1]
+
+    print(
+        f"Num. ineligible packets at simulation start: {total_packets-eligible_packets}")
+
     sim_end_check = simEvents[0, :] > sim_end_time
     while (simEvents.shape[1] > 0 and not sim_end_check.all()):
         if pflag:
             print(f'SimEvents={simEvents[1,:]}')
             print(f'SimTime={simEvents[0,:]}')
+            print(f"Packet IDs={simEvents[2,:]}")
         curEvent = simEvents[1, 0]
         curTime = simEvents[0, 0]
+        curID = simEvents[2, 0].astype(np.int8)
         if curEvent == 0:
-            simEvents = append_event(simEvents, curTime+packet_time, 2)
+            simEvents = append_event(simEvents, curTime+packet_time, 2, curID)
             simEvents = remove_event(simEvents, 0)
             busy_states = np.logical_and(
                 simEvents[0, :] >= curTime, simEvents[0, :] < simEvents[0, -1])
@@ -54,18 +64,19 @@ def simulator(num_nodes=10, num_packets=3, sim_end_time=10, packet_time=0.01, pf
             new_state_added_flag = 0
             backoff = 0
             endState = simEvents[1, :] == 2
-            assert np.sum(endState) == 1
+            assert np.sum(endState) == 1, f"Endstate error: {endState}"
             endTime = simEvents[0, endState]
             while new_state_added_flag < 1:
                 backoff += generate_backoff(10 * packet_time)
                 newTime = curTime + backoff
+                if pflag:
+                    print(f"curID:{curID},backoff:{backoff}")
+                latency_array[curID] += backoff
                 end_time_check = endTime < newTime
                 if end_time_check:
-                    simEvents = append_event(simEvents, newTime, 0)
+                    simEvents = append_event(simEvents, newTime, 0, curID)
                     simEvents = sort_events(simEvents)
                     new_state_added_flag += 1
-                else:
-                    backoff += backoff
             total_backoff_time += backoff
             total_backoffs += 1
             simEvents = remove_event(simEvents, 0)
@@ -73,8 +84,9 @@ def simulator(num_nodes=10, num_packets=3, sim_end_time=10, packet_time=0.01, pf
         elif curEvent == 2:
             simEvents = remove_event(simEvents, 0)
         sim_end_check = simEvents[0, :] > sim_end_time
-    latency = total_backoff_time / total_backoffs
-    packet_success_ratio = sent_packets/total_packets
+    # latency = total_backoff_time / total_backoffs
+    latency = np.mean(latency_array)
+    packet_success_ratio = sent_packets/eligible_packets
     print(
         f'Simulation has completed. Average latency={latency}s, PSR= {packet_success_ratio} ')
     return latency, packet_success_ratio, simEvents
@@ -93,15 +105,18 @@ def generate_events(num_nodes=10, num_packets=3, sim_end_time=10, event_resoluti
         event_resolution {float} -- Lambda for exponential function (default: {0.5})
 
     Returns:
-        Numpy array -- Dimensions are [2,num_nodes*num_packets]. First row stores the event times and second row stores the state IDs.
+        Numpy array -- Dimensions are [3,num_nodes*num_packets]. First row stores the event times, second row stores the state IDs, third row stores packet IDs.
     """
     events = np.random.exponential(
         scale=event_resolution, size=(num_packets, num_nodes))
     events = events.flatten()
+    num_events = events.shape[0]
     events.sort()
     events = roundoff_events(events)
     events = np.vstack((events, np.zeros(shape=events.shape)))
+    events = np.vstack((events, np.arange(num_events, dtype=np.int8)))
     # print(f'Events size in gen:{events.shape}')
+    # print(events)
     return events
 
 
@@ -114,15 +129,15 @@ def sort_events(events):
     Returns:
         Numpy array -- Sorted 'events' numpy array
     """
-    assert events.shape[0] == 2
+    assert events.shape[0] == 3
     sort_idx = np.argsort(events[0, :])
 
     events = events[:, sort_idx]
     return events
 
 
-def generate_backoff(backoff_resolutiton):
-    backoff = np.random.exponential(size=(1, 1), scale=backoff_resolutiton)
+def generate_backoff(backoff_resolution):
+    backoff = np.random.exponential(size=(1, 1), scale=backoff_resolution)
     backoff = roundoff_events(backoff)
     backoff = backoff[0, 0]
     return backoff
@@ -138,12 +153,12 @@ def remove_event(events, idx):
     Returns:
         Numpy array -- 'Events' numpy array with removed column
     """
-    assert events.shape[0] == 2
+    assert events.shape[0] == 3
     events = np.delete(events, idx, axis=1)
     return events
 
 
-def append_event(events, newTime, newState):
+def append_event(events, newTime, newState, newID):
     """Appends new event
 
     Arguments:
@@ -154,8 +169,9 @@ def append_event(events, newTime, newState):
     Returns:
         [type] -- [description]
     """
-    assert events.shape[0] == 2
-    events = np.append(events, np.array([[newTime], [newState]]), axis=1)
+    assert events.shape[0] == 3
+    events = np.append(events, np.array(
+        [[newTime], [newState], [newID]]), axis=1)
     return events
 
 
@@ -165,6 +181,6 @@ def roundoff_events(events, round=1):
 
 # %%
 latency, psr, simEvents = simulator(
-    num_nodes=10, num_packets=10, sim_end_time=1, pflag=1)
+    num_nodes=30, num_packets=50, sim_end_time=1, pflag=0)
 
 # %%
