@@ -5,7 +5,7 @@ import numpy as np
 # %%
 
 
-def simulator(num_nodes=10, num_packets=3, sim_end_time=10, packet_time=0.01, pflag=0):
+def simulator(num_nodes=10, num_packets=3, sim_end_time=10, packet_time=0.01, pflag=0, simEvents=None):
     """Function for implementing the event based simulator.
 
     Keyword Arguments:
@@ -14,6 +14,7 @@ def simulator(num_nodes=10, num_packets=3, sim_end_time=10, packet_time=0.01, pf
         sim_end_time {int} -- [description] (default: {10})
         packet_time {float} -- [description] (default: {0.01})
         pflag {int} -- [description] (default: {0})
+        simEvents {numpy array} -- First row - event times, second row - state IDs
 
     Returns:
         [type] -- [description]
@@ -31,9 +32,9 @@ def simulator(num_nodes=10, num_packets=3, sim_end_time=10, packet_time=0.01, pf
     # packet time units - seconds
 
     # Program
-
-    simEvents = generate_events(
-        num_nodes=num_nodes, num_packets=num_packets, sim_end_time=sim_end_time, event_resolution=10 * packet_time)
+    if type(simEvents) != 'numpy.ndarray':
+        simEvents = generate_events(
+            num_nodes=num_nodes, num_packets=num_packets, sim_end_time=sim_end_time, event_resolution=10 * packet_time)
     sim_end_check = simEvents[0, :] > sim_end_time
     while (simEvents.shape[1] > 0 and not sim_end_check.all()):
         if pflag:
@@ -76,7 +77,7 @@ def simulator(num_nodes=10, num_packets=3, sim_end_time=10, packet_time=0.01, pf
     packet_success_ratio = sent_packets/total_packets
     print(
         f'Simulation has completed. Average latency={latency}s, PSR= {packet_success_ratio} ')
-    return latency, packet_success_ratio
+    return latency, packet_success_ratio, simEvents
 
 
 # %%
@@ -163,7 +164,7 @@ def roundoff_events(events, round=1):
 
 
 # %%
-a = simulator(num_nodes=10, num_packets=100, sim_end_time=1, pflag=1)
-
+latency, psr, simEvents = simulator(
+    num_nodes=10, num_packets=10, sim_end_time=1, pflag=1)
 
 # %%
