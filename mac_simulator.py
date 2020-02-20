@@ -1,17 +1,16 @@
 # %%
 # Add imports
 import numpy as np
-import pdb
+
 # %%
 
 
-def simulator(num_nodes=10, num_packets=3, num_slots=10, sim_end_time=10, packet_time=0.01, pflag=0):
+def simulator(num_nodes=10, num_packets=3, sim_end_time=10, packet_time=0.01, pflag=0):
     """Function for implementing the event based simulator.
 
     Keyword Arguments:
         num_nodes {int} -- Number of nodes in the simulation. (default: {10})
         num_packets {int} -- Number of packets at each node. Time/event instant at which packet must become available must be random/programmable. (default: {10})
-        num_slots {int} -- If slot based structure is being used for MAC protocol, number of slots. (default: {10})
         sim_end_time {int} -- [description] (default: {10})
         packet_time {float} -- [description] (default: {0.01})
         pflag {int} -- [description] (default: {0})
@@ -22,14 +21,11 @@ def simulator(num_nodes=10, num_packets=3, num_slots=10, sim_end_time=10, packet
     # Asserts
     assert (num_nodes > 0)
     assert num_packets > 0
-    assert num_slots > 0
     assert sim_end_time > 0
     # Variables
     # state_id values - 0: carrier sense, 1: transmitting, 2: tx end
-    packet_time = packet_time
     sent_packets = 0
     total_packets = num_packets * num_nodes
-    print(total_packets)
     total_backoff_time = 0
     total_backoffs = 0
     # packet time units - seconds
@@ -102,6 +98,7 @@ def generate_events(num_nodes=10, num_packets=3, sim_end_time=10, event_resoluti
         scale=event_resolution, size=(num_packets, num_nodes))
     events = events.flatten()
     events.sort()
+    events = roundoff_events(events)
     events = np.vstack((events, np.zeros(shape=events.shape)))
     # print(f'Events size in gen:{events.shape}')
     return events
@@ -166,4 +163,7 @@ def roundoff_events(events, round=1):
 
 
 # %%
-a = simulator()
+a = simulator(num_nodes=10, num_packets=100, sim_end_time=1, pflag=1)
+
+
+# %%
