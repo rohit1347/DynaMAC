@@ -114,7 +114,7 @@ def generate_events(num_nodes=10, num_packets=3, sim_end_time=10, event_resoluti
     events = events.flatten()
     num_events = events.shape[0]
     events.sort()
-    events = roundoff_events(events, round=1)
+    events = roundoff_events(events, round=round)
     events = np.vstack((events, np.zeros(shape=events.shape)))
     events = np.vstack((events, np.arange(num_events, dtype=np.int8)))
     # print(f'Events size in gen:{events.shape}')
