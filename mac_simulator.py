@@ -32,6 +32,8 @@ def simulator(num_nodes=10, num_packets=3, sim_end_time=10, packet_time=0.01, pf
     total_backoffs = 0
 
     # packet time units - seconds
+    # ADD - per user latency tracking
+    # ADD - sim start time and duration
 
     # Program
     if type(simEvents) != 'numpy.ndarray':
@@ -95,7 +97,7 @@ def simulator(num_nodes=10, num_packets=3, sim_end_time=10, packet_time=0.01, pf
 # %%
 
 
-def generate_events(num_nodes=10, num_packets=3, sim_end_time=10, event_resolution=0.5):
+def generate_events(num_nodes=10, num_packets=3, sim_end_time=10, event_resolution=0.5, round=1):
     """Generates a single events and states matrix by appending.
 
     Keyword Arguments:
@@ -112,11 +114,12 @@ def generate_events(num_nodes=10, num_packets=3, sim_end_time=10, event_resoluti
     events = events.flatten()
     num_events = events.shape[0]
     events.sort()
-    events = roundoff_events(events)
+    events = roundoff_events(events, round=1)
     events = np.vstack((events, np.zeros(shape=events.shape)))
     events = np.vstack((events, np.arange(num_events, dtype=np.int8)))
     # print(f'Events size in gen:{events.shape}')
-    # print(events)
+    # CHECK exponential function is generating exp dist events per node
+    # ADD node id in the fourth row
     return events
 
 
