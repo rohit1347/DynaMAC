@@ -4,9 +4,9 @@ import numpy as np
 from mac_simulator import * 
 
 # initialisations
-num_nodes = 2
+num_nodes = 5
 num_packets = 5
-frame_duration = 2
+frame_duration = 0.5
 start_time = 0
 sim_end_time = start_time + frame_duration
 events = generate_events(num_nodes=num_nodes, num_packets=num_packets, sim_end_time=sim_end_time, round=2)
@@ -45,6 +45,28 @@ def tdma_simulator(events=None , frame_duration = 2 , num_nodes = 10 , slot_time
     print(slot_start_time)
     print('stop time array')
     print(slot_stop_time)
+    packet_sent_round = np.zeros((int(no_of_rounds),num_nodes))
+    latency = np.zeros(events.shape[1])
+    for event_iter in range(events.shape[1]):
+        node_id = int(events[3,event_iter])
+        print('new event')
+        for round_iter in range(int(no_of_rounds)):
+            curr_event_time = events[0,event_iter]
+            if(round_iter==0):
+                min_limit = True
+            else:
+                min_limit = curr_event_time>=slot_stop_time[node_id,round_iter-1]
+            max_limit = curr_event_time<=slot_stop_time[node_id,round_iter]
+            if(min_limit and max_limit):
+                events[1,event_iter] = 2
+                packet_id = events[2,event_iter]
+                latency[event_iter] = np.maximum((slot_start_time[node_id,round_iter]-curr_event_time),0)
+                print(packet_id)
+     
+    print(packet_sent_round)
+    print(events) 
+    print(latency)          
+            
 #    for round_iter in range(0,poll_period_intervals.shape[0]):
 #        curr_round_start = poll_period_intervals[round_iter]
 #        curr_round_end = curr_round_start + poll_period
@@ -87,6 +109,6 @@ def tdma_simulator(events=None , frame_duration = 2 , num_nodes = 10 , slot_time
 
 # test scripts
 
-tdma_simulator(events=events,num_nodes=num_nodes,frame_duration=2)
+tdma_simulator(events=events,num_nodes=num_nodes,frame_duration=1)
 
 # %%
