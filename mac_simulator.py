@@ -109,7 +109,8 @@ def simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, packet
     packet_success_ratio = sent_packets/eligible_packets
     print(
         f'Simulation has completed. Average latency={latency}s, PSR= {packet_success_ratio}, Ineligible packets: {total_packets-eligible_packets}, Tx End Time: {tx_end_time}')
-    print(f"SimEvents: {simEvents}")
+    if pflag:
+        print(f"SimEvents: {simEvents}")
     print("---------------------------------------")
     return latency, packet_success_ratio, tx_end_time, simEvents
 
@@ -231,3 +232,25 @@ def CSMA_simulator(num_p=5, num_n=5):
     xput = (tp/tx_end_time)[0]
     print(f"Throughput={xput} packets")
     return tp, xput
+
+# %% Generating plots function
+
+
+def generate_xput_plots(num_p=5, num_n_start=5, num_n_delta=5, num_n_end=50):
+    num_ns = range(num_n_start, num_n_end, num_n_delta)
+    xputs = [0] * len(num_ns)
+    total_packets = [0]*len(num_ns)
+    for count, num_n in enumerate(num_ns):
+        total_packets[count], xputs[count] = CSMA_simulator(
+            num_p=5, num_n=num_n)
+    fig, axs = plt.subplots()
+    axs.plot(total_packets, xputs)
+    axs.grid(True)
+    axs.set_xlabel('Total packets')
+    axs.set_ylabel('Throghput (pkt/sec)')
+    fig.tight_layout()
+    plt.show()
+
+
+# %% Generating plots
+generate_xput_plots()
