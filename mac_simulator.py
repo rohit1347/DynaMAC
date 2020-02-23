@@ -48,7 +48,7 @@ def simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, packet
         print('Using given simEvents')
     # Checking if any packets are starting before the sim window start time
     assert not np.any(
-        simEvents[0, :] < sim_start_time), f"{simEvents[0,:]<sim_start_time},{simEvents[0,:]}"
+        simEvents[0, :] < sim_start_time), f"Some events begin before sim start time"
     eligible_packets = np.sum(simEvents[0, :] <= sim_end_time)
     latency_array = [0]*simEvents.shape[1]
 
@@ -58,9 +58,11 @@ def simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, packet
     sim_end_check = simEvents[0, :] > sim_end_time
     while (simEvents.shape[1] > 0 and not sim_end_check.all()):
         if pflag:
+            print("------------------------------")
             print(f'SimEvents={simEvents[1,:]}')
             print(f'SimTime={simEvents[0,:]}')
             print(f"Packet IDs={simEvents[2,:]}")
+            print("------------------------------")
         curTime = simEvents[0, 0]
         curState = simEvents[1, 0]
         curID = simEvents[2, 0].astype(np.int8)
@@ -198,20 +200,20 @@ def rezero_indices(events):
     num_packets = events.shape[1]
     new_packet_ids = np.arange(num_packets)
     old_packet_ids = events[2, :]
-    print(old_packet_ids)
     old_sort_idx = np.argsort(old_packet_ids)
     new_packet_ids = new_packet_ids[old_sort_idx]
     events[2, :] = new_packet_ids
-    print(new_packet_ids)
     return events
 
 
 # %%
-latency, psr, simEvents = simulator(
-    num_nodes=3, num_packets=5, duration=1, pflag=0)
-
-# %%
-simulator(simEvents=simEvents, duration=1, sim_start_time=1)
+for i in range(10):
+    if i == 0:
+        latency, psr, simEvents = simulator(
+            num_nodes=3, num_packets=5, sim_start_time=i, duration=1, pflag=0)
+    else:
+        latency, psr, simEvents = simulator(
+            simEvents=simEvents, sim_start_time=i, duration=1, pflag=1)
 
 
 # %%
