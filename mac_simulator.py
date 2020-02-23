@@ -6,13 +6,14 @@ import pdb
 # %%
 
 
-def simulator(num_nodes=10, num_packets=3, sim_end_time=10, packet_time=0.01, pflag=0, simEvents=None):
+def simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, packet_time=0.01, pflag=0, simEvents=None):
     """Function for implementing the event based simulator.
 
     Keyword Arguments:
         num_nodes {int} -- Number of nodes in the simulation. (default: {10})
         num_packets {int} -- Number of packets at each node. Time/event instant at which packet must become available must be random/programmable. (default: {10})
-        sim_end_time {int} -- [description] (default: {10})
+        sim_start_time {int} -- [description] (default: {0})
+        duration {int} -- [description] (default: {10})
         packet_time {float} -- [description] (default: {0.01})
         pflag {int} -- [description] (default: {0})
         simEvents {numpy array} -- First row - event times, second row - state IDs, third row - packet IDs
@@ -23,9 +24,11 @@ def simulator(num_nodes=10, num_packets=3, sim_end_time=10, packet_time=0.01, pf
     # Asserts
     assert (num_nodes > 0)
     assert num_packets > 0
-    assert sim_end_time > 0
+    assert duration > 0
+
     # Variables
     # state_id values - 0: carrier sense, 1: transmitting, 2: tx end
+    sim_end_time = sim_start_time+duration
     sent_packets = 0
     total_packets = num_packets * num_nodes
     total_backoff_time = 0
@@ -36,9 +39,16 @@ def simulator(num_nodes=10, num_packets=3, sim_end_time=10, packet_time=0.01, pf
     # ADD - sim start time and duration
 
     # Program
-    if type(simEvents) != 'numpy.ndarray':
+    if not isinstance(simEvents, np.ndarray):
         simEvents = generate_events(
             num_nodes=num_nodes, num_packets=num_packets, sim_end_time=sim_end_time, event_resolution=10 * packet_time)
+        print("Generated new events")
+    else:
+        simEvents = rezero_indices(simEvents)
+        print('Using given simEvents')
+    # Checking if any packets are starting before the sim window start time
+    assert not np.any(
+        simEvents[0, :] < sim_start_time), f"{simEvents[0,:]<sim_start_time},{simEvents[0,:]}"
     eligible_packets = np.sum(simEvents[0, :] <= sim_end_time)
     latency_array = [0]*simEvents.shape[1]
 
@@ -51,10 +61,11 @@ def simulator(num_nodes=10, num_packets=3, sim_end_time=10, packet_time=0.01, pf
             print(f'SimEvents={simEvents[1,:]}')
             print(f'SimTime={simEvents[0,:]}')
             print(f"Packet IDs={simEvents[2,:]}")
-        curEvent = simEvents[1, 0]
         curTime = simEvents[0, 0]
+        curState = simEvents[1, 0]
         curID = simEvents[2, 0].astype(np.int8)
-        if curEvent == 0:
+
+        if curState == 0:
             simEvents = append_event(simEvents, curTime+packet_time, 2, curID)
             simEvents = remove_event(simEvents, 0)
             busy_states = np.logical_and(
@@ -62,7 +73,7 @@ def simulator(num_nodes=10, num_packets=3, sim_end_time=10, packet_time=0.01, pf
             simEvents[1, busy_states.flatten()] = 1
             simEvents = sort_events(simEvents)
             sent_packets += 1
-        elif curEvent == 1:
+        elif curState == 1:
             new_state_added_flag = 0
             backoff = 0
             endState = simEvents[1, :] == 2
@@ -83,7 +94,7 @@ def simulator(num_nodes=10, num_packets=3, sim_end_time=10, packet_time=0.01, pf
             total_backoffs += 1
             simEvents = remove_event(simEvents, 0)
 
-        elif curEvent == 2:
+        elif curState == 2:
             simEvents = remove_event(simEvents, 0)
         sim_end_check = simEvents[0, :] > sim_end_time
     # latency = total_backoff_time / total_backoffs
@@ -109,16 +120,17 @@ def generate_events(num_nodes=10, num_packets=3, sim_end_time=10, event_resoluti
     Returns:
         Numpy array -- Dimensions are [3,num_nodes*num_packets]. First row stores the event times, second row stores the state IDs, third row stores packet IDs.
     """
-    events = np.random.exponential(
-        scale=event_resolution, size=(num_packets, num_nodes))
+    events = np.zeros((num_packets, num_nodes))
+    for node in range(num_nodes):
+        events[:, node] = np.random.exponential(
+            scale=event_resolution, size=num_packets)
     events = events.flatten()
     num_events = events.shape[0]
     events.sort()
     events = roundoff_events(events, round=round)
     events = np.vstack((events, np.zeros(shape=events.shape)))
     events = np.vstack((events, np.arange(num_events, dtype=np.int8)))
-    # print(f'Events size in gen:{events.shape}')
-    # CHECK exponential function is generating exp dist events per node
+    print(f'Events size in gen:{events.shape}')
     # ADD node id in the fourth row
     return events
 
@@ -182,8 +194,24 @@ def roundoff_events(events, round=1):
     return np.round(events, decimals=round)
 
 
+def rezero_indices(events):
+    num_packets = events.shape[1]
+    new_packet_ids = np.arange(num_packets)
+    old_packet_ids = events[2, :]
+    print(old_packet_ids)
+    old_sort_idx = np.argsort(old_packet_ids)
+    new_packet_ids = new_packet_ids[old_sort_idx]
+    events[2, :] = new_packet_ids
+    print(new_packet_ids)
+    return events
+
+
 # %%
 latency, psr, simEvents = simulator(
-    num_nodes=30, num_packets=50, sim_end_time=1, pflag=0)
+    num_nodes=3, num_packets=5, duration=1, pflag=0)
+
+# %%
+simulator(simEvents=simEvents, duration=1, sim_start_time=1)
+
 
 # %%
