@@ -2,6 +2,7 @@
 # Add imports
 import numpy as np
 import pdb
+import matplotlib.pyplot as plt
 
 # %%
 
@@ -213,22 +214,20 @@ def rezero_indices(events):
 
 
 # %%
-i = 0
-num_p = 5
-num_n = 50
-tp = num_p*num_n
-simEvents = np.zeros(shape=(3, 10))
-# Initialzing a random simEvents for while loop to start
-while simEvents.shape[1] > 0:
-    if i == 0:
-        latency, psr, tx_end_time, simEvents = simulator(
-            num_nodes=num_n, num_packets=num_p, sim_start_time=i, duration=1, pflag=0, round=2)
-        i += 1
-    else:
-        latency, psr, tx_end_time, simEvents = simulator(
-            simEvents=simEvents, sim_start_time=i, duration=1, pflag=0)
-        i += 1
-print(f"Throughput={(tp/tx_end_time)[0]} packets")
-
-
-# %%
+def CSMA_simulator(num_p=5, num_n=5):
+    i = 0
+    tp = num_p*num_n
+    simEvents = np.zeros(shape=(3, 10))
+    # Initialzing a random simEvents for while loop to start
+    while simEvents.shape[1] > 0:
+        if i == 0:
+            latency, psr, tx_end_time, simEvents = simulator(
+                num_nodes=num_n, num_packets=num_p, sim_start_time=i, duration=1, pflag=0, round=2)
+            i += 1
+        else:
+            latency, psr, tx_end_time, simEvents = simulator(
+                simEvents=simEvents, sim_start_time=i, duration=1, pflag=0)
+            i += 1
+    xput = (tp/tx_end_time)[0]
+    print(f"Throughput={xput} packets")
+    return tp, xput
