@@ -2,12 +2,15 @@ import numpy as np
 import time
 import logging
 import os
+import matplotlib.pyplot as plt
 
 portid = 1
+rew = []
+action1 = []
 
 class QLearningEGreedy:
 
-	def __init__(self, prot, learn_rate = 0.3, discount = 0.8, epsilon = 0.1):
+	def __init__(self, prot, learn_rate = 0.3, discount = 0.8, epsilon = 0):
 		logging.info("QLearnging e-greedy")
 
 		self.q_table	= np.zeros((2, 2))
@@ -35,16 +38,20 @@ class QLearningEGreedy:
 
 		if force_switch == True:
 			action = 0 if prot == 1 else 1
+			action1.append(action)
 
 		elif keep == False:
 			if np.random.rand() < epsilon:
 				action = np.random.randint(2)
 				logging.info("Random choice = {}".format(action))
+				action1.append(action)
 			else:
 				action = np.argmax(self.q_table[self.state, :])
+				action1.append(action)
 
 		else:
 			action = prot
+			action1.append(action)
 		
 		self.action = action
 		self.state_new = action
@@ -112,8 +119,8 @@ class decision_final:
 		##### MODE #####
 		#f_mode = open("/tmp/prot.txt", "r")
 		#mode = int(f_mode.readline().strip("\n"))
-		filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'ram.log')
-		logging.basicConfig(filename="out3.log", level = logging.INFO)
+		#filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'ram.log')
+		logging.basicConfig(filename="out3.log", filemode = 'w', level = logging.INFO)
 		self.metric = metric
 		self.minmax = minmax
 		#self.aggregation = aggr
@@ -144,7 +151,7 @@ class decision_final:
 		prev_prev = -1
 		target_metric = {}
 
-		while True: # {{{
+		while t < 30: # {{{
 			logging.info("Active protocol: {}".format("CSMA" if portid == 0 else "TDMA"))
 
 			if np.any(np.equal(metric, None)) == False: # {{{
@@ -161,7 +168,7 @@ class decision_final:
 					#np.save(self.backlog_file, log_dict)
 
 				#target_metric[t] = log_dict[t]["metrics"]
-				target_metric[t] = 50
+				target_metric[t] = metric[t]
 				logging.info("Target metric = {}".format(target_metric[t]))
 
 
@@ -171,19 +178,23 @@ class decision_final:
 
 				if (mode == 2 or mode == 3): 
 
-					if dt > 1:
+					if dt > 0:
 						if dt == 2:
 							reward = self.calc_reward(target_metric[t], target_metric[t - 2])
 							logging.info("Reward = {}".format(reward))
+							rew.append(reward)
 						elif dt == 3:
 							reward = self.calc_reward(target_metric[t], target_metric[t-3])
 							logging.info("Reward = {}".format(reward))
+							rew.append(reward)
 						else:
 							reward = self.calc_reward(target_metric[t], target_metric[t-1])
 							if reward >= 0:
 								reward = 0
+								rew.append(reward)
 							else:
 								reward = reward
+								rew.append(reward)
 							logging.info("Reward = {}".format(reward))
 
 						logging.info("dt = {}".format(dt))
@@ -204,16 +215,38 @@ class decision_final:
 					t = t + 1
 				else:
 					logging.info("Metrics contain None")
-
-metric1 = {}
-for x in range(10):
-	if x >= 5:
-		metric1[x] = 100 - 10*x
+metric1=[]
+for x in range(30):
+	if x >= 15:
+		metric1.append(300 - 10*x) 
 	else:
-		metric1[x] = 10*x  
+		metric1.append(10*x)  
 
 q1 = decision_final(metric1, 1)
-	
+
+plt.figure(num=1)
+plt.plot(metric1/np.max(metric1))
+#plt.plot(metric1)
+plt.xlabel('time index')
+plt.ylabel('metric value')
+#plt.show()	
+
+#plt.plot(action1/np.max(action1))
+plt.figure(num=2)
+plt.plot(action1)
+plt.xlabel('time index')
+plt.ylabel('action value')	
+#plt.show()
+
+#plt.plot(rew/np.max(rew))
+plt.figure(num=3)
+plt.plot(rew)
+plt.xlabel('time index')
+plt.ylabel('reward value')		
+
+plt.show()
+
+
 
 
 		
