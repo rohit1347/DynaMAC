@@ -37,11 +37,11 @@ def simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, packet
     # packet time units - seconds
     # ADD - per user latency tracking
     # ADD - sim start time and duration
-
+    tx_end_time = None
     # Program
     if not isinstance(simEvents, np.ndarray):
         simEvents = generate_events(
-            num_nodes=num_nodes, num_packets=num_packets, sim_end_time=sim_end_time, event_resolution=10 * packet_time, round=round)
+            num_nodes=num_nodes, num_packets=num_packets, sim_end_time=sim_end_time, event_resolution=100 * packet_time, round=round)
         total_packets = num_packets * num_nodes
         print("Generated new events")
     else:
@@ -236,21 +236,34 @@ def CSMA_simulator(num_p=5, num_n=5):
 # %% Generating plots function
 
 
-def generate_xput_plots(num_p=5, num_n_start=5, num_n_delta=5, num_n_end=50):
+def generate_xput_plots(num_p=5, num_n_start=5, num_n_delta=5, num_n_end=50, montecarlo=1):
+    assert montecarlo >= 1, 'Number of montecarlo runs must be atleast 1'
     num_ns = range(num_n_start, num_n_end, num_n_delta)
-    xputs = [0] * len(num_ns)
-    total_packets = [0]*len(num_ns)
-    for count, num_n in enumerate(num_ns):
-        total_packets[count], xputs[count] = CSMA_simulator(
-            num_p=5, num_n=num_n)
-    fig, axs = plt.subplots()
-    axs.plot(total_packets, xputs)
-    axs.grid(True)
-    axs.set_xlabel('Total packets')
-    axs.set_ylabel('Throghput (pkt/sec)')
-    fig.tight_layout()
-    plt.show()
+    xputs = np.zeros(shape=(montecarlo, len(num_ns)))
+    total_packets = np.zeros(shape=(montecarlo, len(num_ns)))
+    for it in range(0, montecarlo):
+        for count, num_n in enumerate(num_ns):
+            tp, xput = CSMA_simulator(
+                num_p=5, num_n=num_n)
+            total_packets[it, count] = tp
+            xputs[it, count] = xput
+    xputs_mean = np.mean(xputs, axis=0)
+    total_packets_mean = np.mean(total_packets, axis=0)
+    xputs_var = np.var(xputs, axis=0)
+    fig = plt.figure(num=1)
+    plt.errorbar(total_packets_mean, xputs_mean,
+                 yerr=xputs_var, label='Throughput')
+    plt.fill_between(total_packets_mean, xputs_mean-xputs_var,
+                     xputs_mean+xputs_var, alpha=0.5)
+    plt.grid(True)
+    plt.xlabel('Total packets')
+    plt.ylabel('Throughput (pkt/sec)')
+    plt.legend(loc='lower right')
+    plt.title('CSMA: Throughput vs Number of Packets')
 
 
 # %% Generating plots
-generate_xput_plots()
+generate_xput_plots(montecarlo=2, num_n_end=100)
+
+
+# %%
