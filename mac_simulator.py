@@ -265,15 +265,15 @@ def generate_xput_plots(num_p=5, num_n_start=5, num_n_delta=5, num_n_end=50, mon
     plt.legend(loc='lower right')
     plt.title('CSMA: Throughput vs Number of Nodes')
     fig1.show()
-
+    print(latency_mean, latency_var)
     fig2 = plt.figure(num=2, figsize=[9, 6])
     plt.errorbar(num_ns, latency_mean,
-                 yerr=xputs_var, label='Latency', color='red')
+                 yerr=latency_var, label='Latency', color='red')
     plt.fill_between(num_ns, latency_mean-latency_var,
                      latency_mean+latency_var, alpha=0.5, facecolor='r')
     plt.grid(True)
     plt.xlabel('Number of Nodes')
-    plt.ylabel('Average Latency (s)')
+    plt.ylabel('Average Latency/packet (s)')
     plt.legend(loc='lower right')
     plt.title('CSMA: Average Latency vs Number of Nodes')
     fig2.show()
