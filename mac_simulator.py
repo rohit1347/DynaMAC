@@ -260,9 +260,3 @@ def generate_xput_plots(num_p=5, num_n_start=5, num_n_delta=5, num_n_end=50, mon
     plt.ylabel('Throughput (pkt/sec)')
     plt.legend(loc='lower right')
     plt.title('CSMA: Throughput vs Number of Nodes')
-
-
-# %% Generating plots
-generate_xput_plots(montecarlo=100, num_n_end=100)
-
-# %%
