@@ -250,7 +250,7 @@ def generate_xput_plots(num_p=5, num_n_start=5, num_n_delta=5, num_n_end=50, mon
     xputs_mean = np.mean(xputs, axis=0)
     total_packets_mean = np.mean(total_packets, axis=0)
     xputs_var = np.var(xputs, axis=0)
-    fig = plt.figure(num=1)
+    fig = plt.figure(num=1, figsize=[9, 6])
     plt.errorbar(num_ns, xputs_mean,
                  yerr=xputs_var, label='Throughput')
     plt.fill_between(num_ns, xputs_mean-xputs_var,
