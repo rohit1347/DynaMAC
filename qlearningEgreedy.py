@@ -3,6 +3,8 @@ import time
 import logging
 import os
 import matplotlib.pyplot as plt
+from matplotlib.legend_handler import HandlerLine2D
+
 
 portid = 1
 rew = []
@@ -151,7 +153,7 @@ class decision_final:
 		prev_prev = -1
 		target_metric = {}
 
-		while t < 30: # {{{
+		while t < 40: # {{{
 			logging.info("Active protocol: {}".format("CSMA" if portid == 0 else "TDMA"))
 
 			if np.any(np.equal(metric, None)) == False: # {{{
@@ -180,7 +182,7 @@ class decision_final:
 
 					if dt > 0:
 						if dt == 2:
-							reward = self.calc_reward(target_metric[t], target_metric[t - 2])
+							reward = self.calc_reward(target_metric[t], target_metric[t-2])
 							logging.info("Reward = {}".format(reward))
 							rew.append(reward)
 						elif dt == 3:
@@ -216,41 +218,38 @@ class decision_final:
 				else:
 					logging.info("Metrics contain None")
 metric1=[]
-for x in range(30):
-	if x >= 15:
-		metric1.append(300 - 10*x) 
-	else:
-		metric1.append(10*x)  
+for x in range(40):
+	#if x >= 15:
+	metric1.append(10*x) 
+	#else:
+		#metric1.append(10*x)  
 
 q1 = decision_final(metric1, 1)
 
 plt.figure(num=1)
-plt.plot(metric1/np.max(metric1))
+plt.grid(True)
+line1, = plt.plot(metric1/np.max(metric1), 'g', label = 'Normalised Metric')
+plt.legend(handles=[line1], loc='lower left')
+plt.xlabel('Time index')
+plt.ylabel('Metric value(Normalised by max)')
 #plt.plot(metric1)
-plt.xlabel('time index')
-plt.ylabel('metric value')
 #plt.show()	
 
 #plt.plot(action1/np.max(action1))
 plt.figure(num=2)
-plt.plot(action1)
-plt.xlabel('time index')
-plt.ylabel('action value')	
-#plt.show()
-
+plt.grid(True)
+line2, = plt.plot(action1, label = 'Action Value')	
+#plt.annotate('CSMA',
+            #xy=(30, 410), xycoords='figure pixels')
+#plt.show()	
+#plt.annotate('TDMA',
+            #xy=(30, 235), xycoords='figure pixels')
 #plt.plot(rew/np.max(rew))
-plt.figure(num=3)
-plt.plot(rew)
-plt.xlabel('time index')
-plt.ylabel('reward value')		
+#plt.figure(num=2)
+line3, = plt.plot(rew, label = 'Reward value')
+plt.xlabel('Time index')
+plt.ylabel('Value')	
+plt.legend(handler_map={line1: HandlerLine2D(numpoints=4)})
+
 
 plt.show()
-
-
-
-
-		
-
-				
-				
-				
