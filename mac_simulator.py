@@ -251,19 +251,18 @@ def generate_xput_plots(num_p=5, num_n_start=5, num_n_delta=5, num_n_end=50, mon
     total_packets_mean = np.mean(total_packets, axis=0)
     xputs_var = np.var(xputs, axis=0)
     fig = plt.figure(num=1)
-    plt.errorbar(total_packets_mean, xputs_mean,
+    plt.errorbar(num_ns, xputs_mean,
                  yerr=xputs_var, label='Throughput')
-    plt.fill_between(total_packets_mean, xputs_mean-xputs_var,
+    plt.fill_between(num_ns, xputs_mean-xputs_var,
                      xputs_mean+xputs_var, alpha=0.5)
     plt.grid(True)
-    plt.xlabel('Total packets')
+    plt.xlabel('Number of Nodes')
     plt.ylabel('Throughput (pkt/sec)')
     plt.legend(loc='lower right')
-    plt.title('CSMA: Throughput vs Number of Packets')
+    plt.title('CSMA: Throughput vs Number of Nodes')
 
 
 # %% Generating plots
-generate_xput_plots(montecarlo=2, num_n_end=100)
-
+generate_xput_plots(montecarlo=100, num_n_end=100)
 
 # %%
