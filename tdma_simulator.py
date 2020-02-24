@@ -2,22 +2,22 @@
 # library imports
 import numpy as np
 from mac_simulator import * 
-
+import matplotlib.pyplot as plt
+    
 # initialisations
-num_nodes = 5
-num_packets = 5
-frame_duration = 0.5
-start_time = 0
-sim_end_time = start_time + frame_duration
-events = generate_events(num_nodes=num_nodes, num_packets=num_packets, sim_end_time=sim_end_time, round=2)
-nodeID = np.zeros((1,events.shape[1]))
-for i in range(events.shape[1]):
-    nodeID[0][i] = np.random.randint(num_nodes)
-events = np.append(events,nodeID,axis=0)
-print(events)
+def sim_int(num_nodes=5, num_packets=5,sim_end_time=1,packet_time=0.01,printFlag=0):
+
+    events = generate_events(num_nodes=num_nodes, num_packets=num_packets, sim_end_time=sim_end_time, event_resolution=100*packet_time, round=2)
+    nodeID = np.zeros((1,events.shape[1]))
+    for i in range(events.shape[1]):
+        nodeID[0][i] = np.random.randint(num_nodes)
+    events = np.append(events,nodeID,axis=0)
+    return events
+#    print(events)
+    
 #%%
 # fuctions
-def tdma_simulator(events=None , frame_duration = 2 , num_nodes = 10 , slot_time = 0.1 , printFlag=0 , start_time = 0):
+def tdma_simulator(events=None , frame_duration = 2 , num_slots = 10 , slot_time = 0.01 , printFlag=0 , start_time = 0,packet_time=0.01):
     """Function for implementing the event based simulator with TDMA Protocol.
 
     Keyword Arguments:
@@ -29,86 +29,124 @@ def tdma_simulator(events=None , frame_duration = 2 , num_nodes = 10 , slot_time
         [type] -- [description]
     """
     
-    poll_period = slot_time * num_nodes
+    poll_period = slot_time * num_slots
 #    print(poll_period)
     no_of_rounds = frame_duration/poll_period
 #    print(no_of_rounds)
 #    poll_period_intervals = np.linspace(start_time,start_time+frame_duration,no_of_rounds+1)
 
-    slot_start_time = np.zeros((num_nodes,int(no_of_rounds)))
-    slot_stop_time = np.zeros((num_nodes,int(no_of_rounds)))
-    for i in range(0,num_nodes):
+    slot_start_time = np.zeros((num_slots,int(no_of_rounds)))
+    slot_stop_time = np.zeros((num_slots,int(no_of_rounds)))
+    for i in range(0,num_slots):
         for j in range(0,int(no_of_rounds)):
             slot_start_time[i,j] = start_time + poll_period*j + slot_time*i
             slot_stop_time[i,j] = start_time + poll_period*j + slot_time*(i+1)
-    print('start time array')
-    print(slot_start_time)
-    print('stop time array')
-    print(slot_stop_time)
-    packet_sent_round = np.zeros((int(no_of_rounds),num_nodes))
-    latency = np.zeros(events.shape[1])
+    if(printFlag==1):
+        print('start time array')
+        print(slot_start_time)
+        print('stop time array')
+        print(slot_stop_time)
+    final_transmit_time = np.zeros(events.shape[1])
+    no_of_packets_sent = 0
+    last_packet_sent_time = start_time;
+    max_packets_per_slot = slot_time/packet_time
+    packet_ovr_check = np.ones((num_slots,int(no_of_rounds)))*max_packets_per_slot
+    events_pre = events
     for event_iter in range(events.shape[1]):
         node_id = int(events[3,event_iter])
-        print('new event')
         for round_iter in range(int(no_of_rounds)):
-            curr_event_time = events[0,event_iter]
-            if(round_iter==0):
-                min_limit = True
-            else:
-                min_limit = curr_event_time>=slot_stop_time[node_id,round_iter-1]
-            max_limit = curr_event_time<=slot_stop_time[node_id,round_iter]
-            if(min_limit and max_limit):
-                events[1,event_iter] = 2
-                packet_id = events[2,event_iter]
-                latency[event_iter] = np.maximum((slot_start_time[node_id,round_iter]-curr_event_time),0)
-                print(packet_id)
+            if(events[1,event_iter]==0):
+                curr_event_time = events[0,event_iter]
+                if(round_iter==0):
+                    min_limit = True
+                else:
+                    min_limit = curr_event_time>=slot_stop_time[node_id,round_iter-1]
+                max_limit = curr_event_time<=(slot_stop_time[node_id,round_iter]-packet_time)
+                if(min_limit and max_limit):
+                    if(packet_ovr_check[node_id,round_iter]!=0):
+                        events[1,event_iter] = 2
+                        no_of_packets_sent = no_of_packets_sent+1
+                        last_packet_sent_time = start_time + slot_stop_time[node_id,round_iter]
+    #                    packet_id = events[2,event_iter]
+                        final_transmit_time[event_iter] = slot_stop_time[node_id,round_iter]
+    #                    print(packet_id)
+                        packet_ovr_check[node_id,round_iter] = np.maximum((packet_ovr_check[node_id,round_iter] - 1),0)
+                    else:
+                        events[0,event_iter] = slot_stop_time[node_id,round_iter] + packet_time
      
-    print(packet_sent_round)
-    print(events) 
-    print(latency)          
-            
-#    for round_iter in range(0,poll_period_intervals.shape[0]):
-#        curr_round_start = poll_period_intervals[round_iter]
-#        curr_round_end = curr_round_start + poll_period
-#        curr_round_events = np.array([])
-##        condition = events[0,:]>=curr_round_start
-#        condition=np.logical_and(events[0,:]>=curr_round_start,events[0,:]<=curr_round_end-packet_time)
-#        curr_round_events = events[:,condition];
-##        print(curr_round_events)
-##        print("break here")
-#        for i in range(0,num_nodes):
-#            find_node_condition = (curr_round_events[3,:]==i)
-#            event_node = curr_round_events[:,find_node_condition]
-#            print(event_node)
-#            print(event_node.shape)
-#            print(len(event_node.shape))
-#            if(event_node.shape[1]==0):
-#                if(event_node[0] <= curr_round_start + packet_time*i):
-#                    packet_id = event_node[2]
-#                    print('packet is transmitted')
-#                    packet_deletion_idx = np.where(events[2]==packet_id)
-#                    print(packet_deletion_idx)
-#                    np.delete(events,packet_deletion_idx,axis=1)
-#            elif(event_node.shape[1]>=1):
-#                print("current_node")
-#                print(event_node)
-#                if(event_node[0,0] <= curr_round_start + packet_time*i):
-#                    packet_id = event_node[2,0]
-#                    print('packet is transmitted')
-#                    packet_deletion_idx = np.where(events[2,:]==packet_id)
-#                    print(packet_deletion_idx)
-#                    np.delete(events,packet_deletion_idx,axis=1)
-#                else:
-#                    packet_id = event_node[2,0]
-#                    packet_append_idx = np.where(events[2,:]==packet_id)         
-#            else:
-#                break
-#        print(round_iter)
-        
-
-
+#    print(events) 
+    latency = final_transmit_time - events_pre[0,:]
+    average_latency = np.mean(latency)
+    transmission_time = last_packet_sent_time-start_time
+    throughput = no_of_packets_sent/transmission_time
+    
+    if(printFlag==1):
+        print(events_pre) 
+        print(final_transmit_time)
+        print(no_of_packets_sent)
+        print(transmission_time)
+        print(throughput)
+        print(average_latency)
+    
+    return throughput,average_latency
+           
 # test scripts
+num_packets = 20
+frame_duration = 5
+start_time = 0
+packet_time = 0.01
+num_slots = 20
+num_sims = 100
+throughput = np.zeros((num_slots,num_sims))
+avg_latency = np.zeros((num_slots,num_sims))
+num_nodes = np.linspace(1,num_slots,num_slots)
+sim_end_time = start_time + frame_duration
+for sim_node_iter in range(num_slots):
+    for mont_iter in range(num_sims):
+        events = sim_int(num_nodes=int(num_nodes[sim_node_iter]),num_packets=num_packets,sim_end_time=sim_end_time,packet_time=packet_time,printFlag=0)
+        throughput[sim_node_iter,mont_iter],avg_latency[sim_node_iter,mont_iter] = tdma_simulator(events=events,num_slots=num_slots,frame_duration=frame_duration,slot_time=5*packet_time,printFlag=0)
 
-tdma_simulator(events=events,num_nodes=num_nodes,frame_duration=1)
+avg_th_user = np.mean(throughput,axis=1)
+var_th_user = np.var(throughput,axis=1)
+avg_latency_user = np.mean(avg_latency,axis=1)
+var_latency_user = np.var(avg_latency,axis=1)
+print(avg_th_user)
+print(var_th_user)
+print(avg_latency_user)
+print(var_latency_user)
+fig = plt.figure(num=1)
+#plt.plot(num_nodes,th_user)
+plt.errorbar(num_nodes, avg_th_user,
+             yerr=var_th_user, label='Throughput')
+plt.fill_between(num_nodes, avg_th_user-var_th_user,
+                 avg_th_user+var_th_user, facecolor='r', alpha=0.5)
+plt.xlabel('Number of Nodes')
+plt.ylabel('Throughput (pkt/sec)')
+plt.legend(loc='lower right')
+plt.title('TDMA: Throughput vs Number of Nodes')
+plt.grid(True)
+plt.show()
 
+fig = plt.figure(num=2)
+plt.errorbar(num_nodes, avg_latency_user,
+             yerr=var_latency_user, label='Latency')
+plt.fill_between(num_nodes, avg_latency_user-var_latency_user,
+                 avg_latency_user+var_latency_user, facecolor='r', alpha=0.5)
+plt.xlabel('Number of Nodes')
+plt.ylabel('latency (seconds)')
+plt.legend(loc='lower right')
+plt.title('TDMA: Latency vs Number of Nodes')
+plt.grid(True)
+plt.show()
 # %%
+#
+#fig = plt.figure(num=1)
+#    plt.errorbar(total_packets_mean, xputs_mean,
+#                 yerr=xputs_var, label='Throughput')
+#    plt.fill_between(total_packets_mean, xputs_mean-xputs_var,
+#                     xputs_mean+xputs_var, alpha=0.5)
+#    plt.grid(True)
+#    plt.xlabel('Total packets')
+#    plt.ylabel('Throughput (pkt/sec)')
+#    plt.legend(loc='lower right')
+#    plt.title('CSMA: Throughput vs Number of Packets')
