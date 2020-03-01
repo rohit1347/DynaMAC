@@ -119,7 +119,7 @@ fig = plt.figure(num=1)
 plt.errorbar(num_nodes, avg_th_user,
              yerr=var_th_user, label='Throughput')
 plt.fill_between(num_nodes, avg_th_user-var_th_user,
-                 avg_th_user+var_th_user, facecolor='r', alpha=0.5)
+                 avg_th_user+var_th_user, alpha=0.5)
 plt.xlabel('Number of Nodes')
 plt.ylabel('Throughput (pkt/sec)')
 plt.legend(loc='lower right')
@@ -129,7 +129,7 @@ plt.show()
 
 fig = plt.figure(num=2)
 plt.errorbar(num_nodes, avg_latency_user,
-             yerr=var_latency_user, label='Latency')
+             yerr=var_latency_user, label='Latency',color='red')
 plt.fill_between(num_nodes, avg_latency_user-var_latency_user,
                  avg_latency_user+var_latency_user, facecolor='r', alpha=0.5)
 plt.xlabel('Number of Nodes')

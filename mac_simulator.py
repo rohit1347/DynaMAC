@@ -215,7 +215,7 @@ def rezero_indices(events):
 
 
 # %%
-def CSMA_simulator(num_p=5, num_n=5):
+def CSMA_simulator(num_p=5, num_n=5, duration=1):
     i = 0
     tp = num_p*num_n
     simEvents = np.zeros(shape=(3, 10))
@@ -223,34 +223,38 @@ def CSMA_simulator(num_p=5, num_n=5):
     while simEvents.shape[1] > 0:
         if i == 0:
             latency, psr, tx_end_time, simEvents = simulator(
-                num_nodes=num_n, num_packets=num_p, sim_start_time=i, duration=1, pflag=0, round=2)
+                num_nodes=num_n, num_packets=num_p, sim_start_time=i, duration=duration, pflag=0, round=2)
             i += 1
         else:
             latency, psr, tx_end_time, simEvents = simulator(
-                simEvents=simEvents, sim_start_time=i, duration=1, pflag=0)
+                simEvents=simEvents, sim_start_time=i, duration=duration, pflag=0)
             i += 1
     xput = (tp/tx_end_time)[0]
     print(f"Throughput={xput} packets")
-    return tp, xput
+    return tp, xput, latency
 
 # %% Generating plots function
 
 
-def generate_xput_plots(num_p=5, num_n_start=5, num_n_delta=5, num_n_end=50, montecarlo=1):
+def generate_xput_plots(num_p=5, num_n_start=5, num_n_delta=5, num_n_end=50, montecarlo=1, duration=1):
     assert montecarlo >= 1, 'Number of montecarlo runs must be atleast 1'
     num_ns = range(num_n_start, num_n_end, num_n_delta)
     xputs = np.zeros(shape=(montecarlo, len(num_ns)))
     total_packets = np.zeros(shape=(montecarlo, len(num_ns)))
+    mc_latency = np.zeros(shape=(montecarlo, len(num_ns)))
     for it in range(0, montecarlo):
         for count, num_n in enumerate(num_ns):
-            tp, xput = CSMA_simulator(
-                num_p=5, num_n=num_n)
+            tp, xput, latency = CSMA_simulator(
+                num_p=5, num_n=num_n, duration=duration)
             total_packets[it, count] = tp
             xputs[it, count] = xput
+            mc_latency[it, count] = latency
     xputs_mean = np.mean(xputs, axis=0)
     total_packets_mean = np.mean(total_packets, axis=0)
     xputs_var = np.var(xputs, axis=0)
-    fig = plt.figure(num=1)
+    latency_mean = np.mean(mc_latency, axis=0)
+    latency_var = np.var(mc_latency, axis=0)
+    fig1 = plt.figure(num=1, figsize=[9, 6])
     plt.errorbar(num_ns, xputs_mean,
                  yerr=xputs_var, label='Throughput')
     plt.fill_between(num_ns, xputs_mean-xputs_var,
@@ -260,3 +264,16 @@ def generate_xput_plots(num_p=5, num_n_start=5, num_n_delta=5, num_n_end=50, mon
     plt.ylabel('Throughput (pkt/sec)')
     plt.legend(loc='lower right')
     plt.title('CSMA: Throughput vs Number of Nodes')
+    fig1.show()
+    print(latency_mean, latency_var)
+    fig2 = plt.figure(num=2, figsize=[9, 6])
+    plt.errorbar(num_ns, latency_mean,
+                 yerr=latency_var, label='Latency', color='red')
+    plt.fill_between(num_ns, latency_mean-latency_var,
+                     latency_mean+latency_var, alpha=0.5, facecolor='r')
+    plt.grid(True)
+    plt.xlabel('Number of Nodes')
+    plt.ylabel('Average Latency/packet (s)')
+    plt.legend(loc='lower right')
+    plt.title('CSMA: Average Latency vs Number of Nodes')
+    fig2.show()
