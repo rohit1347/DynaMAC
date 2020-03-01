@@ -52,6 +52,7 @@ def tdma_simulator(events=None , frame_duration = 2 , num_slots = 10 , slot_time
     max_packets_per_slot = slot_time/packet_time
     packet_ovr_check = np.ones((num_slots,int(no_of_rounds)))*max_packets_per_slot
     events_pre = events
+    events_post = events
     for event_iter in range(events.shape[1]):
         node_id = int(events[3,event_iter])
         for round_iter in range(int(no_of_rounds)):
@@ -73,7 +74,8 @@ def tdma_simulator(events=None , frame_duration = 2 , num_slots = 10 , slot_time
                         packet_ovr_check[node_id,round_iter] = np.maximum((packet_ovr_check[node_id,round_iter] - 1),0)
                     else:
                         events[0,event_iter] = slot_stop_time[node_id,round_iter] + packet_time
-     
+        if(events[1,event_iter] == 2):
+            events_post = np.delete(events_post, 0, axis=1)
 #    print(events) 
     latency = final_transmit_time - events_pre[0,:]
     average_latency = np.mean(latency)
@@ -88,9 +90,22 @@ def tdma_simulator(events=None , frame_duration = 2 , num_slots = 10 , slot_time
         print(throughput)
         print(average_latency)
     
-    return throughput,average_latency
+    return throughput,average_latency,events_post
            
 # test scripts
+    
+#%%
+num_packets = 5
+frame_duration = 1
+start_time = 0
+packet_time = 0.01
+num_nodes = 5
+sim_end_time = start_time + frame_duration
+events = sim_int(num_nodes=num_nodes,num_packets=num_packets,sim_end_time=sim_end_time,packet_time=packet_time,printFlag=0)
+throughput,avg_latency,post_events = tdma_simulator(events=events,num_slots=num_nodes,frame_duration=frame_duration,slot_time=5*packet_time,printFlag=0)
+    
+
+#%%
 num_packets = 20
 frame_duration = 5
 start_time = 0
