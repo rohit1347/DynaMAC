@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 # %%
 
 
-def simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, packet_time=0.01, pflag=0, simEvents=None, round=1):
+def simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, packet_time=0.01, pflag=0, simEvents=None, round=1, latency_tracker=None):
     """Function for implementing the event based simulator.
 
     Keyword Arguments:
@@ -43,6 +43,11 @@ def simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, packet
         simEvents = generate_events(
             num_nodes=num_nodes, num_packets=num_packets, sim_end_time=sim_end_time, event_resolution=100 * packet_time, round=round)
         total_packets = num_packets * num_nodes
+        latency_tracker = np.zeros((2, total_packets))
+        latency_tracker[0, :] = np.arange(total_packets)
+        latency_tracker[1, :] = simEvents[0, :]
+        print(f"Initial latency tracker: {latency_tracker}")
+        # Latency tracker structure: 1st row- Packet IDs, 2nd row- Start times
         print("Generated new events")
     else:
         total_packets = simEvents.shape[1]
@@ -52,7 +57,8 @@ def simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, packet
     assert not np.any(
         simEvents[0, :] < sim_start_time), f"Some events begin before sim start time"
     eligible_packets = np.sum(simEvents[0, :] <= sim_end_time)
-    latency_array = [0]*simEvents.shape[1]
+    latency_array = [0] * simEvents.shape[1]
+
     print(
         f"Num. ineligible packets at simulation start: {total_packets-eligible_packets}")
 
@@ -60,9 +66,9 @@ def simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, packet
     while (simEvents.shape[1] > 0 and not sim_end_check.all()):
         if pflag:
             print("------------------------------")
-            print(f'SimEvents={simEvents[1,:]}')
-            print(f'SimTime={simEvents[0,:]}')
             print(f"Packet IDs={simEvents[2,:]}")
+            print(f'SimStates={simEvents[1,:]}')
+            print(f'SimTime={simEvents[0,:]}')
             print("------------------------------")
         curTime = simEvents[0, 0]
         curState = simEvents[1, 0]
@@ -75,6 +81,9 @@ def simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, packet
             simEvents[1, busy_states.flatten()] = 1
             simEvents = sort_events(simEvents)
             sent_packets += 1
+            print(f"pid: {curID} diff:{curTime-latency_tracker[1, curID]}")
+            latency_tracker[1, curID] = curTime - latency_tracker[1, curID]
+            print(f"Latency tracker:{latency_tracker}")
         elif curState == 1:
             new_state_added_flag = 0
             backoff = 0
@@ -112,7 +121,8 @@ def simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, packet
     if pflag:
         print(f"SimEvents: {simEvents}")
     print("---------------------------------------")
-    return latency, packet_success_ratio, tx_end_time, simEvents
+    print(f"Mean latency: {np.mean(latency_tracker[1, :])}")
+    return latency, packet_success_ratio, tx_end_time, simEvents, latency_tracker
 
 
 # %%
@@ -215,19 +225,20 @@ def rezero_indices(events):
 
 
 # %%
-def CSMA_simulator(num_p=5, num_n=5, duration=1):
+def CSMA_simulator(num_p=5, num_n=5, duration=1, packet_time=0.01):
     i = 0
     tp = num_p*num_n
     simEvents = np.zeros(shape=(3, 10))
     # Initialzing a random simEvents for while loop to start
     while simEvents.shape[1] > 0:
+        print(f"simEvents length: {simEvents.shape[1]}")
         if i == 0:
-            latency, psr, tx_end_time, simEvents = simulator(
-                num_nodes=num_n, num_packets=num_p, sim_start_time=i, duration=duration, pflag=0, round=2)
+            latency, psr, tx_end_time, simEvents, latency_tracker = simulator(
+                num_nodes=num_n, num_packets=num_p, sim_start_time=i, duration=duration, pflag=0, round=2, packet_time=packet_time)
             i += 1
         else:
-            latency, psr, tx_end_time, simEvents = simulator(
-                simEvents=simEvents, sim_start_time=i, duration=duration, pflag=0)
+            latency, psr, tx_end_time, simEvents, latency_tracker = simulator(
+                simEvents=simEvents, sim_start_time=i, duration=duration, pflag=0, latency_tracker=latency_tracker, packet_time=packet_time)
             i += 1
     xput = (tp/tx_end_time)[0]
     print(f"Throughput={xput} packets")
