@@ -73,8 +73,10 @@ def simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, packet
         curTime = simEvents[0, 0]
         curState = simEvents[1, 0]
         curID = simEvents[2, 0].astype(np.int8)
+        curNodeID = simEvents[3, 0]
         if curState == 0:
-            simEvents = append_event(simEvents, curTime+packet_time, 2, curID)
+            simEvents = append_event(
+                simEvents, curTime+packet_time, 2, curID, curNodeID)
             simEvents = remove_event(simEvents, 0)
             busy_states = np.logical_and(
                 simEvents[0, :] >= curTime, simEvents[0, :] < simEvents[0, -1])
@@ -98,7 +100,8 @@ def simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, packet
                 latency_array[curID] += backoff
                 end_time_check = endTime < newTime
                 if end_time_check:
-                    simEvents = append_event(simEvents, newTime, 0, curID)
+                    simEvents = append_event(
+                        simEvents, newTime, 0, curID, curNodeID)
                     simEvents = sort_events(simEvents)
                     new_state_added_flag += 1
             total_backoff_time += backoff
@@ -138,7 +141,7 @@ def generate_events(num_nodes=10, num_packets=3, sim_end_time=10, event_resoluti
         event_resolution {float} -- Lambda for exponential function (default: {0.5})
 
     Returns:
-        Num_py array -- Dimensions are [3,num_nodes*num_packets]. First row stores the event times, second row stores the state IDs, third row stores packet IDs.
+        Num_py array -- Dimensions are [3,num_nodes*num_packets]. First row stores the event times, second row stores the state IDs, third row stores packet IDs, fourth row stores node IDs.
     """
     events = np.zeros((num_packets, num_nodes))
     for node in range(num_nodes):
@@ -150,6 +153,7 @@ def generate_events(num_nodes=10, num_packets=3, sim_end_time=10, event_resoluti
     events = roundoff_events(events, round=round)
     events = np.vstack((events, np.zeros(shape=events.shape)))
     events = np.vstack((events, np.arange(num_events, dtype=np.int8)))
+    events = np.vstack((events, np.repeat([range(num_nodes)], num_packets)))
     print(f'Events size in gen:{events.shape}')
     # ADD node id in the fourth row
     return events
@@ -164,7 +168,7 @@ def sort_events(events):
     Returns:
         Num_py array -- Sorted 'events' numpy array
     """
-    assert events.shape[0] == 3
+    assert events.shape[0] == 4
     sort_idx = np.argsort(events[0, :])
 
     events = events[:, sort_idx]
@@ -188,12 +192,12 @@ def remove_event(events, idx):
     Returns:
         Num_py array -- 'Events' numpy array with removed column
     """
-    assert events.shape[0] == 3
+    assert events.shape[0] == 4
     events = np.delete(events, idx, axis=1)
     return events
 
 
-def append_event(events, newTime, newState, newID):
+def append_event(events, newTime, newState, newID, newNodeID):
     """Appends new event
 
     Arguments:
@@ -204,9 +208,9 @@ def append_event(events, newTime, newState, newID):
     Returns:
         [type] -- [description]
     """
-    assert events.shape[0] == 3
+    assert events.shape[0] == 4
     events = np.append(events, np.array(
-        [[newTime], [newState], [newID]]), axis=1)
+        [[newTime], [newState], [newID], [newNodeID]]), axis=1)
     return events
 
 
