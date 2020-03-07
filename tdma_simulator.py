@@ -12,8 +12,11 @@ def sim_int(num_nodes=5, num_packets=5,sim_end_time=1,packet_time=0.01,printFlag
     for i in range(events.shape[1]):
         nodeID[0][i] = np.random.randint(num_nodes)
     events = np.append(events,nodeID,axis=0)
+
+    if(printFlag==1):
+        print(events)
+        
     return events
-#    print(events)
     
 #%%
 # fuctions
@@ -47,6 +50,7 @@ def tdma_simulator(events=None , frame_duration = 2 , num_slots = 10 , slot_time
         print('stop time array')
         print(slot_stop_time)
     final_transmit_time = np.zeros(events.shape[1])
+    latency = np.zeros(events.shape[1])
     no_of_packets_sent = 0
     last_packet_sent_time = start_time;
     max_packets_per_slot = slot_time/packet_time
@@ -76,18 +80,29 @@ def tdma_simulator(events=None , frame_duration = 2 , num_slots = 10 , slot_time
                         events[0,event_iter] = slot_stop_time[node_id,round_iter] + packet_time
         if(events[1,event_iter] == 2):
             events_post = np.delete(events_post, 0, axis=1)
+            latency[event_iter] = final_transmit_time[event_iter] - events_pre[0,event_iter]
+        else:
+            latency[event_iter] = 0
 #    print(events) 
-    latency = final_transmit_time - events_pre[0,:]
+    
     average_latency = np.mean(latency)
     transmission_time = last_packet_sent_time-start_time
-    throughput = no_of_packets_sent/transmission_time
+    if(transmission_time == 0):
+        throughput = 0
+    else:
+        throughput = no_of_packets_sent/transmission_time
     
     if(printFlag==1):
         print(events_pre) 
+        print('final_transmit_time')
         print(final_transmit_time)
+        print('no_of_packets_sent')
         print(no_of_packets_sent)
+        print('transmission_time')
         print(transmission_time)
+        print('throughput')
         print(throughput)
+        print('average_latency')
         print(average_latency)
     
     return throughput,average_latency,events_post
@@ -101,8 +116,8 @@ start_time = 0
 packet_time = 0.01
 num_nodes = 5
 sim_end_time = start_time + frame_duration
-events = sim_int(num_nodes=num_nodes,num_packets=num_packets,sim_end_time=sim_end_time,packet_time=packet_time,printFlag=0)
-throughput,avg_latency,post_events = tdma_simulator(events=events,num_slots=num_nodes,frame_duration=frame_duration,slot_time=5*packet_time,printFlag=0)
+events = sim_int(num_nodes=num_nodes,num_packets=num_packets,sim_end_time=sim_end_time,packet_time=packet_time,printFlag=1)
+throughput,avg_latency,post_events = tdma_simulator(events=events,num_slots=num_nodes,frame_duration=frame_duration,slot_time=5*packet_time,printFlag=1)
     
 
 #%%
@@ -111,7 +126,7 @@ frame_duration = 5
 start_time = 0
 packet_time = 0.01
 num_slots = 20
-num_sims = 100
+num_sims = 1
 throughput = np.zeros((num_slots,num_sims))
 avg_latency = np.zeros((num_slots,num_sims))
 num_nodes = np.linspace(1,num_slots,num_slots)
@@ -165,3 +180,30 @@ plt.show()
 #    plt.ylabel('Throughput (pkt/sec)')
 #    plt.legend(loc='lower right')
 #    plt.title('CSMA: Throughput vs Number of Packets')
+
+# %%
+
+# combining the tdma and csma simulator
+
+# step 1 : generate events across 500 seconds
+num_packets = 20
+sim_duration = 5.0
+frame_duration = 1.0
+start_time = 0
+packet_time = 0.01
+num_nodes = 10
+sim_end_time = start_time + sim_duration
+events = sim_int(num_nodes=num_nodes,num_packets=num_packets,sim_end_time=sim_end_time,packet_time=packet_time,printFlag=0)
+
+# step 2 : each csma and tdma window can be 10 seconds
+num_frames = int(sim_duration/frame_duration)
+throughput = np.zeros(num_frames)
+avg_latency = np.zeros(num_frames)
+pre_events = events
+for frame_iter in range(num_frames):
+    start_time_frame = start_time + frame_iter*frame_duration
+    throughput[frame_iter],avg_latency[frame_iter],events = tdma_simulator(events=events,num_slots=num_nodes,frame_duration=frame_duration,start_time = start_time_frame,slot_time=2*packet_time,printFlag=0)
+
+
+print(throughput)
+print(avg_latency)
