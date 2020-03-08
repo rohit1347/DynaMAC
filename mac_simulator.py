@@ -140,11 +140,12 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
     packet_success_ratio = sent_packets/eligible_packets
     print(
         f'Sim window stats - average latency={latency}s, PSR= {packet_success_ratio}, Ineligible packets: {total_packets-eligible_packets}, Tx End Time: {tx_end_time}')
+    print(f"Window xput: {sent_packets/duration} packets/second")
     if pflag:
         print(f"SimEvents: {simEvents}")
     print("---------------------------------------")
     print(
-        f"Mean latency: {global_latency}")
+        f"Mean latency across windows: {global_latency}")
     return latency, packet_success_ratio, tx_end_time, simEvents, latency_tracker, previously_sent_packets
 
 
@@ -271,10 +272,10 @@ def CSMA_simulator(num_p=5, num_n=5, duration=1, packet_time=0.01, simEvents=Non
             i += 1
         else:
             latency, psr, tx_end_time, simEvents, latency_tracker, prev_packets = csma_simulator(
-                simEvents=simEvents, sim_start_time=i, duration=duration, pflag=0, latency_tracker=latency_tracker, packet_time=packet_time, previously_sent_packets=prev_packets)
+                simEvents=simEvents, sim_start_time=i*duration, duration=duration, pflag=0, latency_tracker=latency_tracker, packet_time=packet_time, previously_sent_packets=prev_packets)
             i += 1
     xput = (tp/tx_end_time)[0]
-    print(f"Throughput={xput} packets")
+    print(f"Throughput={xput} packets/second")
     return tp, xput, latency, latency_tracker
 
 # %% Generating plots function
@@ -288,7 +289,7 @@ def generate_xput_plots(num_p=5, num_n_start=5, num_n_delta=5, num_n_end=50, mon
     mc_latency = np.zeros(shape=(montecarlo, len(num_ns)))
     for it in range(0, montecarlo):
         for count, num_n in enumerate(num_ns):
-            tp, xput, latency = CSMA_simulator(
+            tp, xput, latency, _ = CSMA_simulator(
                 num_p=5, num_n=num_n, duration=duration)
             total_packets[it, count] = tp
             xputs[it, count] = xput
