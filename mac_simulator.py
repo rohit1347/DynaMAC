@@ -53,7 +53,7 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
         print("Generated new events")
     else:
         total_packets = simEvents.shape[1]
-        simEvents = rezero_indices(simEvents)
+        # simEvents = rezero_indices(simEvents)
         print('Using given simEvents')
     # Checking if any packets are starting before the sim window start time
     assert not np.any(
@@ -92,12 +92,19 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
             simEvents[1, busy_states.flatten()] = 1
             lat_time = latency_tracker[1, np.isclose(
                 latency_tracker[0, :], curID)]
+
             print(
-                f"pid: {curID} diff:{curTime-lat_time}")
-            latency_tracker[1, curID] = curTime - lat_time
+                f"pid: {curID} diff: {curTime-lat_time}, curTime: {curTime}, lat time: {lat_time}")
+
+            if curTime-lat_time < 0:
+                pdb.set_trace()
+            latency_tracker[1, np.isclose(
+                latency_tracker[0, :], curID)] = curTime - lat_time
             # print(f"Latency tracker:{latency_tracker}")
-            previously_sent_packets = np.append(previously_sent_packets, curID)
-            pkts_sent_in_window_idx = np.append(pkts_sent_in_window_idx, curID)
+            previously_sent_packets = np.append(previously_sent_packets, np.argwhere(np.isclose(
+                latency_tracker[0, :], curID)))
+            pkts_sent_in_window_idx = np.append(pkts_sent_in_window_idx, np.argwhere(np.isclose(
+                latency_tracker[0, :], curID)))
             simEvents = sort_events(simEvents)
             sent_packets += 1
 
