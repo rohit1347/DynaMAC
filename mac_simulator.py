@@ -60,7 +60,11 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
         simEvents[0, :] < sim_start_time), f"Some events begin before sim start time"
     assert isinstance(latency_tracker, np.ndarray)
     assert isinstance(previously_sent_packets, np.ndarray)
-    eligible_packets = np.sum(simEvents[0, :] <= sim_end_time)
+    cond1 = simEvents[0, :] >= sim_start_time
+    cond2 = simEvents[0, :] <= sim_end_time
+    # pdb.set_trace()
+    eligible_packets = np.sum(cond1 & cond2)
+    print(eligible_packets)
 
     print(
         f"Num. ineligible packets at simulation start: {total_packets-eligible_packets}")
@@ -133,9 +137,7 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
         latency = np.mean(latency_tracker[1, pkts_sent_in_window_idx])
     else:
         latency = np.inf
-    # except:
-    # print(
-    #     f"Latency fail {latency_tracker[0,:]},{pkts_sent_in_window_idx},{latency}")
+
     global_latency = np.mean(latency_tracker[1, previously_sent_packets])
     packet_success_ratio = sent_packets/eligible_packets
     print(
