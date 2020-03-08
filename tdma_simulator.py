@@ -7,11 +7,10 @@ import matplotlib.pyplot as plt
 # initialisations
 def sim_int(num_nodes=5, num_packets=5,sim_end_time=1,packet_time=0.01,printFlag=0):
 
-    events = generate_events(num_nodes=num_nodes, num_packets=num_packets, sim_end_time=sim_end_time, event_resolution=100*packet_time, round=2)
+    events = generate_events(num_nodes=num_nodes, num_packets=num_packets, sim_end_time=sim_end_time, event_resolution=0.5*sim_end_time, round=2)
     nodeID = np.zeros((1,events.shape[1]))
     for i in range(events.shape[1]):
         nodeID[0][i] = np.random.randint(num_nodes)
-    events = np.append(events,nodeID,axis=0)
 
     if(printFlag==1):
         print(events)
@@ -85,7 +84,7 @@ def tdma_simulator(events=None , frame_duration = 2 , num_slots = 10 , slot_time
             latency[event_iter] = 0
 #    print(events) 
     
-    average_latency = np.mean(latency)
+    average_latency = np.mean(latency(idx))
     transmission_time = last_packet_sent_time-start_time
     if(transmission_time == 0):
         throughput = 0
@@ -186,9 +185,9 @@ plt.show()
 # combining the tdma and csma simulator
 
 # step 1 : generate events across 500 seconds
-num_packets = 20
-sim_duration = 5.0
-frame_duration = 1.0
+num_packets = 100
+sim_duration = 40.0
+frame_duration = 2.0
 start_time = 0
 packet_time = 0.01
 num_nodes = 10
@@ -204,6 +203,7 @@ for frame_iter in range(num_frames):
     start_time_frame = start_time + frame_iter*frame_duration
     throughput[frame_iter],avg_latency[frame_iter],events = tdma_simulator(events=events,num_slots=num_nodes,frame_duration=frame_duration,start_time = start_time_frame,slot_time=2*packet_time,printFlag=0)
 
-
+#print(events)
 print(throughput)
 print(avg_latency)
+print(pre_events[0])
