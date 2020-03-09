@@ -18,6 +18,9 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
         packet_time {float} -- [description] (default: {0.01})
         pflag {int} -- [description] (default: {0})
         simEvents {numpy array} -- First row - event times, second row - state IDs, third row - packet IDs
+        round {int} -- [description] (default: {1})
+        latency_tracker {[type]} -- [description] (default: {None})
+        previously_sent_packets {[type]} -- [description] (default: {None})
 
     Returns:
         [type] -- [description]
@@ -44,22 +47,26 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
         simEvents = generate_events(
             num_nodes=num_nodes, num_packets=num_packets, sim_end_time=sim_end_time, event_resolution=0.75*duration, round=round)
         total_packets = num_packets * num_nodes
-        latency_tracker = np.zeros((2, total_packets))
-        latency_tracker[0, :] = simEvents[2, :].astype(np.int8)
-        latency_tracker[1, :] = simEvents[0, :]
+        latency_tracker = create_latency_tracker(simEvents)
         print(f"Initial latency tracker: {latency_tracker}")
         previously_sent_packets = np.empty(1, dtype=int)
         # Latency tracker structure: 1st row- Packet IDs, 2nd row- Start times
         print("Generated new events")
     else:
         total_packets = simEvents.shape[1]
+        if not isinstance(latency_tracker, np.ndarray):
+            latency_tracker = create_latency_tracker(simEvents)
+        if not isinstance(previously_sent_packets, np.ndarray):
+            previously_sent_packets = np.empty(1, dtype=int)
         # simEvents = rezero_indices(simEvents)
         print('Using given simEvents')
     # Checking if any packets are starting before the sim window start time
     assert not np.any(
         simEvents[0, :] < sim_start_time), f"Some events begin before sim start time"
-    assert isinstance(latency_tracker, np.ndarray)
-    assert isinstance(previously_sent_packets, np.ndarray)
+    assert isinstance(
+        latency_tracker, np.ndarray), f"Latency tracker not initialized"
+    assert isinstance(previously_sent_packets,
+                      np.ndarray), f"Previously sent packets tracker not initialized"
     cond1 = simEvents[0, :] >= sim_start_time
     cond2 = simEvents[0, :] <= sim_end_time
     # pdb.set_trace()
@@ -146,7 +153,8 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
         latency = np.inf
 
     global_latency = np.mean(latency_tracker[1, previously_sent_packets])
-    packet_success_ratio = sent_packets/eligible_packets
+    packet_success_ratio = sent_packets / eligible_packets
+    xput = sent_packets/duration
     print(
         f'Sim window stats - average latency={latency}s, PSR= {packet_success_ratio}, Ineligible packets: {total_packets-eligible_packets}, Tx End Time: {tx_end_time}')
     print(f"Window xput: {sent_packets/duration} packets/second")
@@ -155,7 +163,7 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
     print("---------------------------------------")
     print(
         f"Mean latency across windows: {global_latency}")
-    return latency, packet_success_ratio, tx_end_time, simEvents, latency_tracker, previously_sent_packets
+    return latency, xput, tx_end_time, simEvents, latency_tracker, previously_sent_packets
 
 
 # %%
@@ -276,17 +284,24 @@ def CSMA_simulator(num_p=5, num_n=5, duration=1, packet_time=0.01, simEvents=Non
     while simEvents.shape[1] > 0:
         print(f"simEvents length: {simEvents.shape[1]}")
         if i == 0:
-            latency, psr, tx_end_time, simEvents, latency_tracker, prev_packets = csma_simulator(
+            latency, xput, tx_end_time, simEvents, latency_tracker, prev_packets = csma_simulator(
                 num_nodes=num_n, num_packets=num_p, sim_start_time=i, duration=duration, pflag=0, round=2, packet_time=packet_time)
             i += 1
         else:
-            latency, psr, tx_end_time, simEvents, latency_tracker, prev_packets = csma_simulator(
+            latency, xput, tx_end_time, simEvents, latency_tracker, prev_packets = csma_simulator(
                 simEvents=simEvents, sim_start_time=i*duration, duration=duration, pflag=0, latency_tracker=latency_tracker, packet_time=packet_time, previously_sent_packets=prev_packets)
             i += 1
-    xput = (tp/tx_end_time)[0]
+    global_xput = (tp/tx_end_time)[0]
     print(f"Throughput={xput} packets/second")
-    return tp, xput, latency, latency_tracker
+    return tp, global_xput, latency, latency_tracker
 
+
+def create_latency_tracker(simEvents):
+    total_packets = simEvents.shape[1]
+    latency_tracker = np.zeros((2, total_packets))
+    latency_tracker[0, :] = simEvents[2, :].astype(np.int8)
+    latency_tracker[1, :] = simEvents[0, :]
+    return latency_tracker
 # %% Generating plots function
 
 
