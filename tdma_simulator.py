@@ -19,16 +19,21 @@ def sim_int(num_nodes=5, num_packets=5,sim_end_time=1,packet_time=0.01,printFlag
     
 #%%
 # fuctions
-def tdma_simulator(events=None , frame_duration = 2 , num_slots = 10 , slot_time = 0.01 , printFlag=0 , start_time = 0,packet_time=0.01):
+def tdma_simulator(events=None , frame_duration = 2 , num_slots = 10 , slot_time = 0.05 , printFlag=0 , start_time = 0,packet_time=0.01):
     """Function for implementing the event based simulator with TDMA Protocol.
 
     Keyword Arguments:
-        simEvents {numpy array} -- First row - event times, second row - state IDs, third row - packet IDs
-        num_nodes {int} -- Number of nodes contending currently in the network. (default: {10})
-        packet_time {float} -- Duration of the packet transmission (default: {0.01}) . Unit - seconds
+        events {numpy array} -- First row - event times, second row - state IDs, third row - packet IDs, fourth row - node IDs
+        frame_duration {int} -- Time duration/window size for which the simulator needs to be run
+        num_slots {int} -- Number of nodes contending currently in the network. (default: {10})
+        slot_time {float} -- This defines the maximum number of packets that can be sent in a slot for each node
         printFlag {int} -- all the debug prints can be enabled with this flag (default: {0})
+        start_time {float} -- The global time stamp at which this simulator is being called currently
+        packet_time {float} -- Duration of the packet transmission (default: {0.01}) . Unit - seconds
     Returns:
-        [type] -- [description]
+        throughput {float} -- the average throughput for this frame/window duration
+        average_latency {float} -- the average latency for this frame/window duration for all the sucessfully transmitted packets
+        events_post {numpy array} -- same format as events. This now contains the events which are un-attended to in this TDMA window
     """
     
     poll_period = slot_time * num_slots
