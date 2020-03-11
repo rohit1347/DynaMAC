@@ -61,8 +61,11 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
         # simEvents = rezero_indices(simEvents)
         print('Using given simEvents')
     # Checking if any packets are starting before the sim window start time
-    assert not np.any(
-        simEvents[0, :] < sim_start_time), f"Some events begin before sim start time"
+    if np.any(simEvents[0, :] < sim_start_time):
+        # pdb.set_trace()
+        print(f"Some events begin before sim start time")
+    # assert not np.any(
+        # simEvents[0, :] < sim_start_time), f"Some events begin before sim start time"
     assert isinstance(
         latency_tracker, np.ndarray), f"Latency tracker not initialized"
     assert isinstance(previously_sent_packets,
@@ -71,7 +74,7 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
     cond2 = simEvents[0, :] <= sim_end_time
     # pdb.set_trace()
     eligible_packets = np.sum(cond1 & cond2)
-    print(eligible_packets)
+    print("Num. eligible packets in window: {eligible_packets} packets")
 
     print(
         f"Num. ineligible packets at simulation start: {total_packets-eligible_packets}")
@@ -131,7 +134,7 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
             num_backoff = 1
             while new_state_added_flag < 1:
                 backoff += generate_backoff(2*packet_time,
-                                            round=round, num_backoff=num_backoff)
+                                            round=round, num_backoff=num_backoff, max_backoff=5)
                 newTime = curTime + backoff
                 if pflag:
                     print(f"curID:{curID},backoff:{backoff}")
@@ -222,11 +225,10 @@ def sort_events(events):
     return events
 
 
-def generate_backoff(backoff_resolution, round=1, num_backoff=1):
+def generate_backoff(backoff_resolution, round=1, num_backoff=1, max_backoff=10):
     backoff = 0
-    num_backoff = np.minimum(num_backoff, 10)
+    num_backoff = np.minimum(num_backoff, max_backoff)
     while backoff == 0:
-        print("In backoff")
         backoff = np.random.exponential(
             size=(1, 1), scale=num_backoff*backoff_resolution)
         backoff = roundoff_events(backoff, round=round)
