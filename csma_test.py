@@ -11,4 +11,7 @@ generate_xput_plots(montecarlo=2, num_n_end=10, num_p=2, duration=1e6)
 
 
 # %%
-print(DynaMAC_switch_test())
+print(DynaMAC_switch_test(num_n=200, num_p=500))
+
+
+# %%

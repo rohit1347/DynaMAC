@@ -45,7 +45,7 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
     # Program
     if not isinstance(simEvents, np.ndarray):
         simEvents = generate_events(
-            num_nodes=num_nodes, num_packets=num_packets, sim_end_time=sim_end_time, event_resolution=0.75*duration, round=round)
+            num_nodes=num_nodes, num_packets=num_packets, sim_end_time=sim_end_time, round=round)
         total_packets = num_packets * num_nodes
         latency_tracker = create_latency_tracker(simEvents)
         print(f"Initial latency tracker: {latency_tracker}")
@@ -86,7 +86,7 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
             print("------------------------------")
         curTime = simEvents[0, 0]
         curState = simEvents[1, 0]
-        curID = simEvents[2, 0].astype(np.int8)
+        curID = simEvents[2, 0].astype(int)
         curNodeID = simEvents[3, 0]
         if curState == 0:
             if not isinstance(pkts_sent_in_window_idx, np.ndarray):
@@ -99,19 +99,26 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
             simEvents[1, busy_states.flatten()] = 1
             lat_time = latency_tracker[1, np.isclose(
                 latency_tracker[0, :], curID)]
-
+            # lat_time = latency_tracker[1, curID]
+            # pdb.set_trace()
+            diff = curTime-lat_time
             print(
-                f"pid: {curID} diff: {curTime-lat_time}, curTime: {curTime}, lat time: {lat_time}")
+                f"pid: {curID} diff: {diff}, curTime: {curTime}, lat time: {lat_time}")
 
-            if curTime-lat_time < 0:
+            if diff < 0:
                 pdb.set_trace()
-            latency_tracker[1, np.isclose(
-                latency_tracker[0, :], curID)] = curTime - lat_time
+
+            # latency_tracker[1, np.isclose(
+            #     latency_tracker[0, :], curID)] = curTime - lat_time
+            latency_tracker[1, curID] = curTime - lat_time
             # print(f"Latency tracker:{latency_tracker}")
-            previously_sent_packets = np.append(previously_sent_packets, np.argwhere(np.isclose(
-                latency_tracker[0, :], curID)))
-            pkts_sent_in_window_idx = np.append(pkts_sent_in_window_idx, np.argwhere(np.isclose(
-                latency_tracker[0, :], curID)))
+            # previously_sent_packets = np.append(previously_sent_packets, np.argwhere(np.isclose(
+            #     latency_tracker[0, :], curID)))
+            previously_sent_packets = np.append(
+                previously_sent_packets, curID)
+            # pkts_sent_in_window_idx = np.append(pkts_sent_in_window_idx, np.argwhere(np.isclose(
+            #     latency_tracker[0, :], curID)))
+            pkts_sent_in_window_idx = np.append(pkts_sent_in_window_idx, curID)
             simEvents = sort_events(simEvents)
             sent_packets += 1
 
@@ -169,7 +176,7 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
 # %%
 
 
-def generate_events(num_nodes=10, num_packets=3, sim_end_time=10, event_resolution=0.5, round=1):
+def generate_events(num_nodes=10, num_packets=3, sim_end_time=10, round=1):
     """Generates a single events and states matrix by appending.
 
     Keyword Arguments:
@@ -181,6 +188,7 @@ def generate_events(num_nodes=10, num_packets=3, sim_end_time=10, event_resoluti
     Returns:
         Num_py array -- Dimensions are [3,num_nodes*num_packets]. First row stores the event times, second row stores the state IDs, third row stores packet IDs, fourth row stores node IDs.
     """
+    event_resolution = 0.6*sim_end_time
     events = np.zeros((num_packets, num_nodes))
     for node in range(num_nodes):
         events[:, node] = np.random.exponential(
@@ -190,7 +198,7 @@ def generate_events(num_nodes=10, num_packets=3, sim_end_time=10, event_resoluti
     # events.sort()
     events = roundoff_events(events, round=round)
     events = np.vstack((events, np.zeros(shape=events.shape)))
-    events = np.vstack((events, np.arange(num_events, dtype=np.int8)))
+    events = np.vstack((events, np.arange(num_events, dtype=int)))
     events = np.vstack((events, np.repeat([range(num_nodes)], num_packets)))
     events = sort_events(events)
     print(f'Events size in gen:{events.shape}')
@@ -216,6 +224,7 @@ def sort_events(events):
 
 def generate_backoff(backoff_resolution, round=1, num_backoff=1):
     backoff = 0
+    num_backoff = np.minimum(num_backoff, 10)
     while backoff == 0:
         print("In backoff")
         backoff = np.random.exponential(
@@ -299,7 +308,7 @@ def CSMA_simulator(num_p=5, num_n=5, duration=1, packet_time=0.01, simEvents=Non
 def create_latency_tracker(simEvents):
     total_packets = simEvents.shape[1]
     latency_tracker = np.zeros((2, total_packets))
-    latency_tracker[0, :] = simEvents[2, :].astype(np.int8)
+    latency_tracker[0, :] = simEvents[2, :].astype(int)
     latency_tracker[1, :] = simEvents[0, :]
     return latency_tracker
 # %% Generating plots function
