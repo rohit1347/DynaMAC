@@ -6,8 +6,6 @@ import matplotlib.pyplot as plt
 from matplotlib.legend_handler import HandlerLine2D
 
 
-g_dt = -2
-
 class QLearningBoltzmann:
 
 	def __init__(self, prot, learn_rate = 0.3, discount = 0.8, T = 0.1):
@@ -35,17 +33,14 @@ class QLearningBoltzmann:
 
 		if force_switch == True:
 			action = 0 if prot == 1 else 1
-			action1.append(action)
 		elif keep == False:
 			action = np.random.choice(
 					np.array([0, 1]),
 					p = self.prob_table[self.state]
 				)
-			action1.append(action)
 			#prob.append(self.prob_table[self.state])
 		else:
 			action = prot
-			action1.append(action)
 
 		logging.info("Choice = {}".format(action))
 		
@@ -139,71 +134,37 @@ class QLearningEGreedy:
 		return
 
 class decision_final:
-	def calc_reward(self, curr, prev): # {{{
-		if curr > prev:
-			reward = curr / prev - 1. if prev > 0. else 0.
-		else:
-			reward = - (prev / curr - 1.) if curr > 0. else 0.
-		if reward > 1. or reward < -1:
-			reward = 1 if reward > 1 else -1
+    def calc_reward(self, curr, prev): # {{{
+        if curr > prev:
+            reward = curr / prev - 1. if prev > 0. else 0.
+        else:
+            reward = - (prev / curr - 1.) if curr > 0. else 0.
+        if reward > 1. or reward < -1:
+            reward = 1 if reward > 1 else -1
+            
+        if self.minmax == 0:	# min
+            return reward * -5.
+        elif self.minmax == 1:	# max
+            return reward * 5.
 
-		if self.minmax == 0:	# min
-			return reward * -5.
-		elif self.minmax == 1:	# max
-			return reward * 5.
-
-	def aggr(self, aggr, list): # {{{
-		array = np.array(list)
-		if len(array) == 0:
-			met = None
-		elif aggr == 0:
-			met = array.sum()
-		elif aggr == 2: 
-			met = array.max()
-		elif aggr == 3:
-			met = array.min()
-		elif aggr == 4:
-			met = array.var()
-		elif aggr == 5:
-			met = array.shape[0]
-		return met
-
-    def __init__(self, metric, minmax, mode=0):
-        seed = int(time.time())
-        np.random.seed(seed)
-        #protid = np.random.choice([0, 1], p = [0.5, 0.5])
-        logging.basicConfig(filename="out3.log", filemode = 'w', level = logging.INFO)
-        self.metric = metric
-        self.minmax = minmax
-
-    if mode == 0 or mode == 1:
-            protid = mode
-            mode = 2
-
-        reward = 0.
-        prev_protid = protid
-
-		# ML modules
-        if mode == 2:
-		somac = QLearningEGreedy(protid)
-	if mode == 3
-		somac = QlearningBoltzmann(protid)
+    def result_calc(self, metric, minmax, mode=0,g_dt=-2):
+        decision = mode
         if np.any(np.equal(metric, None)) == False:
-			g_dt = g_dt + 1
-            if ((mode == 2) and (metric.shape>=4)): 
+            g_dt = g_dt + 1
+            if ((mode == 2) and (len(metric)>=4)): 
                 if g_dt > 0:
-					if g_dt == 2:
-						reward = self.calc_reward(metric[-1], metric[-3])
-					elif g_dt == 3:
-						reward = self.calc_reward(metric[-1], metric[-4])
+                    if g_dt == 2:
+                        reward = self.calc_reward(metric[-1], metric[-3])
+                    elif g_dt == 3:
+                        reward = self.calc_reward(metric[-1], metric[-4])
                     else:
                         reward = self.calc_reward(metric[-1], metric[-2])
-						if reward >= 0:
-                            reward = 0
-                        else:
-                            reward = reward
+#						if reward >= 0:
+#                            reward = 0
+#                        else:
+#                            reward = reward
 
-                    somac.update_qtable(reward, dt)
+                    somac.update_qtable(reward, g_dt)
                     decision = somac.decision(protid)
 
                     if protid != decision: 
@@ -216,6 +177,31 @@ class decision_final:
         else:
             logging.info("Metrics contain None")
         return decision
+    
+    def __init__(self, metric, minmax, mode=0,g_dt=-2):
+        seed = int(time.time())
+        np.random.seed(seed)
+        #protid = np.random.choice([0, 1], p = [0.5, 0.5])
+        logging.basicConfig(filename="out3.log", filemode = 'w', level = logging.INFO)
+        self.metric = metric
+        self.minmax = minmax
+
+        if mode == 0 or mode == 1:
+            protid = mode
+            mode = 2
+
+        reward = 0.
+
+    	# ML modules
+        if mode == 2:
+            somac = QLearningEGreedy(protid)
+#        if mode == 3:
+#            somac = QlearningBoltzmann(protid)
+        decision = mode
+        output = []
+        _ = self.result_calc(metric, minmax, mode,g_dt)
+        
+        return
 
 #metric1=[]
 #protocol = decision_final(metric1, 1)
