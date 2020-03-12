@@ -5,7 +5,8 @@ from mac_selection import *
 from qlearning_optimized import *
 
 # %%
-latency_final,xput_final,prot_arr = DynaMAC_somac_test(num_n=30, num_p=10,duration=20)
+latency_final, xput_final, prot_arr = DynaMAC_somac_test(
+    num_n=30, num_p=10, duration=20)
 
 # %%
 #_, xput, _, lat = CSMA_simulator(duration=500, packet_time=0.01)

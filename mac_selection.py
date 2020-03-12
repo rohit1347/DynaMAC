@@ -36,11 +36,12 @@ def DynaMAC_switch_test(num_p=5, num_n=5, window_size=10, round=2, duration=200)
         xput_array = np.append(xput_array, xput)
     return latency_array, xput_array
 
+
 def DynaMAC_somac_test(num_p=5, num_n=5, window_size=10, round=2, duration=200):
     latency_array = np.zeros(1)
     xput_array = np.zeros(1)
-    MAC_array =  np.zeros(1)
-    MAC_flag = 0 # 0 - CSMA , 1 - TDMA
+    MAC_array = np.zeros(1)
+    MAC_flag = 0  # 0 - CSMA , 1 - TDMA
     latency_tracker = None
     pre_packets = None
     g_dt = -2
@@ -63,8 +64,11 @@ def DynaMAC_somac_test(num_p=5, num_n=5, window_size=10, round=2, duration=200):
                 slot_time=0.1)
         latency_array = np.append(latency_array, latency)
         xput_array = np.append(xput_array, xput)
-        MAC_flag = decision_final(xput_array,1,MAC_flag,g_dt)
+        decision_class = decision_final(
+            xput_array, 1, mode=MAC_flag, g_dt=g_dt)
+        # MAC_flag, g_dt = decision_class.result_calc()
+        MAC_flag, g_dt = decision_class.decision, decision_class.g_dt
         print(MAC_flag)
         MAC_array = np.append(MAC_array, MAC_flag)
-        
-    return latency_array, xput_array,MAC_array
+
+    return latency_array, xput_array, MAC_array
