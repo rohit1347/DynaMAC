@@ -5,8 +5,7 @@ from mac_selection import *
 
 
 # %%
-print(DynaMAC_switch_test(num_n=20, num_p=500))
-
+print(DynaMAC_switch_test(num_n=30, num_p=100))
 
 # %%
 _, xput, _, lat = CSMA_simulator(duration=500, packet_time=0.01)

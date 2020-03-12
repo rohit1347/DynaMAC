@@ -3,6 +3,7 @@
 import numpy as np
 import pdb
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 # %%
 
@@ -49,32 +50,29 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
         total_packets = num_packets * num_nodes
         latency_tracker = create_latency_tracker(simEvents)
         print(f"Initial latency tracker: {latency_tracker}")
-        previously_sent_packets = np.empty(1, dtype=int)
+        previously_sent_packets = list()
         # Latency tracker structure: 1st row- Packet IDs, 2nd row- Start times
         print("Generated new events")
     else:
         total_packets = simEvents.shape[1]
         if not isinstance(latency_tracker, np.ndarray):
             latency_tracker = create_latency_tracker(simEvents)
-        if not isinstance(previously_sent_packets, np.ndarray):
-            previously_sent_packets = np.empty(1, dtype=int)
-        # simEvents = rezero_indices(simEvents)
+        if not isinstance(previously_sent_packets, list):
+            previously_sent_packets = list()
         print('Using given simEvents')
     # Checking if any packets are starting before the sim window start time
-    if np.any(simEvents[0, :] < sim_start_time):
-        # pdb.set_trace()
-        print(f"Some events begin before sim start time")
-    # assert not np.any(
-        # simEvents[0, :] < sim_start_time), f"Some events begin before sim start time"
+    assert not np.any(
+        simEvents[0, :] < sim_start_time), f"Some events begin before sim start time"
     assert isinstance(
         latency_tracker, np.ndarray), f"Latency tracker not initialized"
+    # print(f"Latency tracker:{latency_tracker}")
     assert isinstance(previously_sent_packets,
-                      np.ndarray), f"Previously sent packets tracker not initialized"
+                      list), f"Previously sent packets tracker not initialized"
     cond1 = simEvents[0, :] >= sim_start_time
     cond2 = simEvents[0, :] <= sim_end_time
     # pdb.set_trace()
     eligible_packets = np.sum(cond1 & cond2)
-    print("Num. eligible packets in window: {eligible_packets} packets")
+    print(f"Num. eligible packets in window: {eligible_packets} packets")
 
     print(
         f"Num. ineligible packets at simulation start: {total_packets-eligible_packets}")
@@ -92,8 +90,8 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
         curID = simEvents[2, 0].astype(int)
         curNodeID = simEvents[3, 0]
         if curState == 0:
-            if not isinstance(pkts_sent_in_window_idx, np.ndarray):
-                pkts_sent_in_window_idx = np.zeros(1, dtype=int)
+            if not isinstance(pkts_sent_in_window_idx, list):
+                pkts_sent_in_window_idx = list()
             simEvents = append_event(
                 simEvents, curTime+packet_time, 2, curID, curNodeID)
             simEvents = remove_event(simEvents, 0)
@@ -102,8 +100,6 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
             simEvents[1, busy_states.flatten()] = 1
             lat_time = latency_tracker[1, np.isclose(
                 latency_tracker[0, :], curID)]
-            # lat_time = latency_tracker[1, curID]
-            # pdb.set_trace()
             diff = curTime-lat_time
             print(
                 f"pid: {curID} diff: {diff}, curTime: {curTime}, lat time: {lat_time}")
@@ -111,17 +107,15 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
             if diff < 0:
                 pdb.set_trace()
 
-            # latency_tracker[1, np.isclose(
-            #     latency_tracker[0, :], curID)] = curTime - lat_time
-            latency_tracker[1, curID] = curTime - lat_time
-            # print(f"Latency tracker:{latency_tracker}")
-            # previously_sent_packets = np.append(previously_sent_packets, np.argwhere(np.isclose(
-            #     latency_tracker[0, :], curID)))
-            previously_sent_packets = np.append(
-                previously_sent_packets, curID)
-            # pkts_sent_in_window_idx = np.append(pkts_sent_in_window_idx, np.argwhere(np.isclose(
-            #     latency_tracker[0, :], curID)))
-            pkts_sent_in_window_idx = np.append(pkts_sent_in_window_idx, curID)
+            latency_tracker[1, np.isclose(
+                latency_tracker[0, :], curID, atol=1e-11)] = diff
+            # latency_tracker[1, curID] = curTime - lat_time
+            pkt_idx = np.argwhere(np.isclose(
+                latency_tracker[0, :], curID, atol=1e-11).flatten())
+            pkt_idx = pkt_idx.flatten()
+            pkt_idx = pkt_idx[0]
+            previously_sent_packets.append(pkt_idx)
+            pkts_sent_in_window_idx.append(pkt_idx)
             simEvents = sort_events(simEvents)
             sent_packets += 1
 
@@ -157,12 +151,13 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
             simEvents = remove_event(simEvents, 0)
 
         sim_end_check = simEvents[0, :] > sim_end_time
-    if isinstance(pkts_sent_in_window_idx, np.ndarray):
-        latency = np.mean(latency_tracker[1, pkts_sent_in_window_idx])
+    if isinstance(pkts_sent_in_window_idx, list):
+        latency = np.mean(latency_tracker[1, np.asarray(
+            pkts_sent_in_window_idx, dtype=int)])
     else:
         latency = np.inf
-
-    global_latency = np.mean(latency_tracker[1, previously_sent_packets])
+    global_latency = np.mean(
+        latency_tracker[1, np.asarray(previously_sent_packets, dtype=int)])
     packet_success_ratio = sent_packets / eligible_packets
     xput = sent_packets/duration
     print(
@@ -189,7 +184,7 @@ def generate_events(num_nodes=10, num_packets=3, sim_end_time=10, round=1):
         event_resolution {float} -- Lambda for exponential function (default: {0.5})
 
     Returns:
-        Num_py array -- Dimensions are [3,num_nodes*num_packets]. First row stores the event times, second row stores the state IDs, third row stores packet IDs, fourth row stores node IDs.
+        Num_py array -- Dimensions are [4,num_nodes*num_packets]. First row stores the event times, second row stores the state IDs, third row stores packet IDs, fourth row stores node IDs.
     """
     event_resolution = 0.6*sim_end_time
     events = np.zeros((num_packets, num_nodes))
@@ -357,3 +352,14 @@ def generate_xput_plots(num_p=5, num_n_start=5, num_n_delta=5, num_n_end=50, mon
     plt.legend(loc='lower right')
     plt.title('CSMA: Average Latency vs Number of Nodes')
     fig2.show()
+
+
+def simEvents_plot(simEvents, iteration, duration=0):
+    # Filtering to obtain left over packets (state = 0)
+    simEvents = simEvents[:, np.isclose(simEvents[1, :], 0)]
+    plt.figure(figsize=[9, 6])
+    sns.distplot(simEvents[0, :])
+    plt.axvline(x=duration)
+    plt.xlabel('Packet Timestamps')
+    plt.ylabel('Probability')
+    plt.title(f"Window: {iteration}")
