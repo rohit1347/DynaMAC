@@ -125,11 +125,12 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
             endState = simEvents[1, :] == 2
             assert np.sum(endState) == 1, f"Endstate error: {endState}"
             endTime = simEvents[0, endState]
-            num_backoff = 1
+            num_backoff = 0
             while new_state_added_flag < 1:
                 backoff += generate_backoff(2*packet_time,
                                             round=round, num_backoff=num_backoff, max_backoff=5)
                 newTime = curTime + backoff
+                num_backoff += 1
                 if pflag:
                     print(f"curID:{curID},backoff:{backoff}")
                 end_time_check = endTime < newTime
@@ -220,12 +221,14 @@ def sort_events(events):
     return events
 
 
-def generate_backoff(backoff_resolution, round=1, num_backoff=1, max_backoff=10):
+def generate_backoff(backoff_resolution, round=1, num_backoff=1, max_backoff=5):
     backoff = 0
     num_backoff = np.minimum(num_backoff, max_backoff)
     while backoff == 0:
-        backoff = np.random.exponential(
-            size=(1, 1), scale=num_backoff*backoff_resolution)
+        backoff = np.random.uniform(
+            low=num_backoff*2, high=num_backoff*2+2, size=(1, 1))
+        # backoff = np.random.exponential(
+        #     size=(1, 1), scale=num_backoff*backoff_resolution)
         backoff = roundoff_events(backoff, round=round)
         backoff = backoff[0, 0]
     return backoff
