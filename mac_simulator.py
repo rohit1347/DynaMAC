@@ -74,6 +74,8 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
     cond2 = simEvents[0, :] <= sim_end_time
     # pdb.set_trace()
     eligible_packets = np.sum(cond1 & cond2)
+    # print(simEvents[2, cond1 & cond2])
+    # pdb.set_trace()
     print(f"Num. eligible packets in window: {eligible_packets} packets")
 
     print(
@@ -92,37 +94,52 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
         curID = simEvents[2, 0].astype(int)
         curNodeID = simEvents[3, 0]
         if curState == 0:
+            cond1 = simEvents[0, :] >= sim_start_time
+            cond2 = simEvents[0, :] <= sim_end_time
+            # print(f"ins0 {simEvents[2, cond1 & cond2]}")
             # if not isinstance(pkts_sent_in_window_idx, list):
-                # pkts_sent_in_window_idx = list()
+            # pkts_sent_in_window_idx = list()
             simEvents = append_event(
                 simEvents, curTime+packet_time, 2, curID, curNodeID)
             simEvents = remove_event(simEvents, 0)
-            busy_states = np.logical_and(
+            cond3 = np.logical_and(
                 simEvents[0, :] >= curTime, simEvents[0, :] < curTime+packet_time)
+            busy_states = np.logical_and(cond3, simEvents[1, :] != 2)
             simEvents[1, busy_states.flatten()] = 1
             lat_time = latency_tracker[1, np.isclose(
                 latency_tracker[0, :], curID)]
+            if lat_time == 0:
+                pdb.set_trace()
             diff = curTime - lat_time
-            if pflag:
-                print(
-                    f"pid: {curID} diff: {diff}, curTime: {curTime}, lat time: {lat_time}")
-
+            # if pflag:
+            # print(
+            #     f"pid: {curID} diff: {diff}, curTime: {curTime}, lat time: {lat_time}")
             if diff < 0:
                 pdb.set_trace()
 
             latency_tracker[1, np.isclose(
-                latency_tracker[0, :], curID, atol=1e-11)] = diff
+                latency_tracker[0, :], curID)] = diff
             # latency_tracker[1, curID] = curTime - lat_time
             pkt_idx = np.argwhere(np.isclose(
-                latency_tracker[0, :], curID, atol=1e-11).flatten())
+                latency_tracker[0, :], curID).flatten())
+            # pkt_idx = latency_tracker[0, (np.isclose(
+            #     latency_tracker[0, :], curID).flatten())]
+            # pdb.set_trace()
             pkt_idx = pkt_idx.flatten()
             pkt_idx = pkt_idx[0]
+            # print(f"pktidx:{pkt_idx}")
             previously_sent_packets.append(pkt_idx)
             pkts_sent_in_window_idx.append(pkt_idx)
             simEvents = sort_events(simEvents)
             sent_packets += 1
+            cond1 = simEvents[0, :] >= sim_start_time
+            cond2 = simEvents[0, :] <= sim_end_time
+            # print(f"ins0post {simEvents[2, cond1 & cond2]}")
 
         elif curState == 1:
+            cond1 = simEvents[0, :] >= sim_start_time
+            cond2 = simEvents[0, :] <= sim_end_time
+            # print(f"ins1 {simEvents[2, cond1 & cond2]}")
             new_state_added_flag = 0
             backoff = 0
             endState = simEvents[1, :] == 2
@@ -157,24 +174,40 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
             total_backoff_time += backoff
             total_backoffs += 1
             simEvents = remove_event(simEvents, 0)
+            assert np.unique(simEvents[2, :]).shape == simEvents[2, :].shape
+            cond1 = simEvents[0, :] >= sim_start_time
+            cond2 = simEvents[0, :] <= sim_end_time
+            # print(f"ins1post {simEvents[2, cond1 & cond2]}")
 
         elif curState == 2:
+            cond1 = simEvents[0, :] >= sim_start_time
+            cond2 = simEvents[0, :] <= sim_end_time
+            # print(f"ins2 {simEvents[2, cond1 & cond2]}")
             if simEvents.shape[1] == 1:
                 tx_end_time = simEvents[0]
             else:
                 tx_end_time = None
             simEvents = remove_event(simEvents, 0)
+            cond1 = simEvents[0, :] >= sim_start_time
+            cond2 = simEvents[0, :] <= sim_end_time
+            # print(f"ins2post {simEvents[2, cond1 & cond2]}")
 
         sim_end_check = simEvents[0, :] > sim_end_time
     if isinstance(pkts_sent_in_window_idx, list):
         latency = np.mean(latency_tracker[1, np.asarray(
             pkts_sent_in_window_idx, dtype=int)])
+        if latency > 2:
+            pdb.set_trace()
     else:
         latency = np.inf
+    print(
+        f"pre_track{latency_tracker[1,np.asarray(pkts_sent_in_window_idx,dtype=int)]}")
+    # pdb.set_trace()
     global_latency = np.mean(
         latency_tracker[1, np.asarray(previously_sent_packets, dtype=int)])
     packet_success_ratio = sent_packets / eligible_packets
-    xput = sent_packets/duration
+    xput = sent_packets / duration
+    print(f"Tback:{total_backoff_time}")
     print(
         f'Sim window stats - average latency={latency}s, PSR= {packet_success_ratio}, Ineligible packets: {total_packets-eligible_packets}, Tx End Time: {tx_end_time}')
     print(
@@ -192,23 +225,27 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
 
 def generate_events(num_nodes=10, num_packets=3, sim_end_time=10, round=1, window_size=10):
     """Generates a single events and states matrix by appending.
-
     Keyword Arguments:
         num_nodes {int} -- Number of nodes in the simulation (default: {10})
         num_packets {int} -- Number of packets per node (default: {3})
         sim_end_time {int} -- Simulation end time (default: {10})
         event_resolution {float} -- Lambda for exponential function (default: {0.5})
-
     Returns:
         Num_py array -- Dimensions are [4,num_nodes*num_packets]. First row stores the event times, second row stores the state IDs, third row stores packet IDs, fourth row stores node IDs.
     """
-
     events = np.zeros((num_packets, num_nodes))
-    # event_resolution = window_start + 0.5*window_size
     for node in range(num_nodes):
-        events[:, node] = np.random.exponential(
-            scale=0.5 * window_size, size=num_packets)
-        events[:, node] += node*window_size
+        if(node % 4 == 0):
+            events[:, node] = np.random.uniform(
+                0, 0.2*sim_end_time, num_packets)
+        elif(node % 4 == 1):
+            events[:, node] = np.random.uniform(
+                0.8*sim_end_time, sim_end_time, num_packets)
+        elif(node % 4 == 2):
+            events[:, node] = np.random.normal(
+                0.5*sim_end_time, 5*window_size, num_packets)
+        else:
+            events[:, node] = np.random.random(num_packets)*sim_end_time
     events = events.flatten()
     num_events = events.shape[0]
     # events.sort()
@@ -234,7 +271,7 @@ def sort_events(events):
         Num_py array -- Sorted 'events' numpy array
     """
     assert events.shape[0] == 4
-    sort_idx = np.argsort(events[0, :])
+    sort_idx = np.argsort(events[0, :], kind='stable')
 
     events = events[:, sort_idx]
     return events
