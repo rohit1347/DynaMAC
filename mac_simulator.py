@@ -37,7 +37,8 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
     sent_packets = 0
     total_backoff_time = 0
     total_backoffs = 0
-    pkts_sent_in_window_idx = None
+    # pkts_sent_in_window_idx = None
+    pkts_sent_in_window_idx = list()
 
     # packet time units - seconds
     # ADD - per user latency tracking
@@ -61,8 +62,9 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
             previously_sent_packets = list()
         print('Using given simEvents')
     # Checking if any packets are starting before the sim window start time
-    assert not np.any(
-        simEvents[0, :] < sim_start_time), f"Some events begin before sim start time"
+    print(f"Dropped packets:{np.sum(simEvents[0,:]<sim_start_time)}")
+    # assert not np.any(
+    #     simEvents[0, :] < sim_start_time), f"Some events begin before sim start time"
     assert isinstance(
         latency_tracker, np.ndarray), f"Latency tracker not initialized"
     # print(f"Latency tracker:{latency_tracker}")
@@ -90,13 +92,13 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
         curID = simEvents[2, 0].astype(int)
         curNodeID = simEvents[3, 0]
         if curState == 0:
-            if not isinstance(pkts_sent_in_window_idx, list):
-                pkts_sent_in_window_idx = list()
+            # if not isinstance(pkts_sent_in_window_idx, list):
+                # pkts_sent_in_window_idx = list()
             simEvents = append_event(
                 simEvents, curTime+packet_time, 2, curID, curNodeID)
             simEvents = remove_event(simEvents, 0)
             busy_states = np.logical_and(
-                simEvents[0, :] >= curTime, simEvents[0, :] < simEvents[0, -1])
+                simEvents[0, :] >= curTime, simEvents[0, :] < curTime+packet_time)
             simEvents[1, busy_states.flatten()] = 1
             lat_time = latency_tracker[1, np.isclose(
                 latency_tracker[0, :], curID)]
@@ -124,8 +126,18 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
             new_state_added_flag = 0
             backoff = 0
             endState = simEvents[1, :] == 2
-            assert np.sum(endState) == 1, f"Endstate error: {endState}"
+            if sum(endState) != 1:
+                endState = np.where(simEvents[1, :] == 0)[0]
+                # true_states = np.where(endState)
+                endState = endState[0]
+
+            # assert np.sum(endState) <= 1, f"Endstate error: {endState}"
             endTime = simEvents[0, endState]
+            # try:
+            #     # assert endTime.shape[0] == 1 or endTime.shape == ()
+            #     assert endTime.shape[0] == 1 or endTime.shape == ()
+            # except:
+            #     pdb.set_trace()
             num_backoff = 0
             while new_state_added_flag < 1:
                 backoff += generate_backoff(2*packet_time,
@@ -135,6 +147,7 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
                 if pflag:
                     print(f"curID:{curID},backoff:{backoff}")
                 end_time_check = endTime < newTime
+                # end_time_check = end_time_check[0]
                 if end_time_check:
                     simEvents = append_event(
                         simEvents, newTime, 0, curID, curNodeID)
@@ -164,7 +177,8 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
     xput = sent_packets/duration
     print(
         f'Sim window stats - average latency={latency}s, PSR= {packet_success_ratio}, Ineligible packets: {total_packets-eligible_packets}, Tx End Time: {tx_end_time}')
-    print(f"Window xput: {sent_packets/duration} packets/second")
+    print(
+        f"Window xput: {sent_packets/duration} packets/second, sent packets:{sent_packets}")
     if pflag:
         print(f"SimEvents: {simEvents}")
     print("---------------------------------------")

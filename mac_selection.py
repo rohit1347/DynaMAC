@@ -47,10 +47,11 @@ def DynaMAC_somac_test(num_p=5, num_n=5, window_size=10, round=2, duration=200):
     g_dt = -2
     simEvents = generate_events(
         num_nodes=num_n, num_packets=num_p, sim_end_time=duration, round=round)
-    tp = num_p*num_n
+    simEvents_pre = simEvents
     simEvents_length = simEvents.shape[1]
     for iteration, window_start in enumerate(range(0, duration, window_size)):
-        #        simEvents_plot(simEvents, iteration+1, duration=duration)
+        # print(simEvents)
+        simEvents_plot(simEvents, iteration+1, duration=duration)
         # https: // seaborn.pydata.org/generated/seaborn.distplot.html
         # if simEvents.shape[1] <= simEvents_length/2:
         if not MAC_flag:
@@ -71,4 +72,4 @@ def DynaMAC_somac_test(num_p=5, num_n=5, window_size=10, round=2, duration=200):
         print(MAC_flag)
         MAC_array = np.append(MAC_array, MAC_flag)
 
-    return latency_array, xput_array, MAC_array
+    return latency_array, xput_array, MAC_array, simEvents_pre

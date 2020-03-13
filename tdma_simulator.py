@@ -82,8 +82,7 @@ def tdma_simulator(events=None, frame_duration=2, num_slots=10, slot_time=0.05, 
                     if(packet_ovr_check[node_id, round_iter] != 0):
                         events[1, event_iter] = 2
                         no_of_packets_sent = no_of_packets_sent+1
-                        last_packet_sent_time = start_time + \
-                            slot_stop_time[node_id, round_iter]
+                        last_packet_sent_time = slot_stop_time[node_id, round_iter]
     #                    packet_id = events[2,event_iter]
                         final_transmit_time[event_iter] = slot_stop_time[node_id, round_iter]
     #                    print(packet_id)
@@ -102,28 +101,29 @@ def tdma_simulator(events=None, frame_duration=2, num_slots=10, slot_time=0.05, 
 
     for post_event_iter in range(events_post.shape[1]):
         if(events_post[0, post_event_iter] <= start_time + frame_duration):
-            events_post[0,post_event_iter] = events_post[0,post_event_iter] + poll_period
-            
+            events_post[0, post_event_iter] = events_post[0,
+                                                          post_event_iter] + poll_period
+
     average_latency = np.mean(latency)
+    print(start_time)
     transmission_time = last_packet_sent_time-start_time
     if(transmission_time == 0):
         throughput = 0
     else:
         throughput = no_of_packets_sent/transmission_time
 
-    if(printFlag == 1):
-        print(events_pre)
-        print('final_transmit_time')
-        print(final_transmit_time)
-        print('no_of_packets_sent')
-        print(no_of_packets_sent)
-        print('transmission_time')
-        print(transmission_time)
-        print('throughput')
-        print(throughput)
-        print('average_latency')
-        print(average_latency)
-
+    # print(events_pre)
+    # print('final_transmit_time')
+    # print(final_transmit_time)
+    print('no_of_packets_sent')
+    print(no_of_packets_sent)
+    print('transmission_time')
+    print(transmission_time)
+    print('throughput')
+    print(throughput)
+    print('average_latency')
+    print(average_latency)
+    print("___________________________")
     return throughput, average_latency, events_post
 
 # test scripts

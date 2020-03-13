@@ -5,8 +5,8 @@ from mac_selection import *
 from qlearning_optimized import *
 import matplotlib.pyplot as plt
 # %%
-latency_final, xput_final, prot_arr = DynaMAC_somac_test(
-    num_n=30, num_p=400, duration=300)
+latency_final, xput_final, prot_arr, simEvents = DynaMAC_somac_test(
+    num_n=30, num_p=100, duration=300)
 
 # %%
 plt.figure()
