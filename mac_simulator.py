@@ -92,43 +92,57 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
         if curState == 0:
             if not isinstance(pkts_sent_in_window_idx, list):
                 pkts_sent_in_window_idx = list()
-            if curTime + packet_time > sim_end_time:
-                simEvents = append_event(
-                    simEvents, sim_end_time, 0, curID, curNodeID)
-            else:
+            if curTime+packet_time < sim_end_time:
+                # simEvents = remove_event(simEvents, 0)
+                # try:
+                busy_states = np.logical_and(
+                    simEvents[0, :] >= curTime, simEvents[0, :] < (curTime+packet_time))
+                # except:
+                #     pdb.set_trace()
+                simEvents[1, busy_states.flatten()] = 1
                 simEvents = append_event(
                     simEvents, curTime+packet_time, 2, curID, curNodeID)
+                lat_time = latency_tracker[1, np.isclose(
+                    latency_tracker[0, :], curID)]
+                diff = curTime - lat_time
+                if pflag:
+                    print(
+                        f"pid: {curID} diff: {diff}, curTime: {curTime}, lat time: {lat_time}")
+
+                if diff < 0:
+                    pdb.set_trace()
+
+                latency_tracker[1, np.isclose(
+                    latency_tracker[0, :], curID, atol=1e-11)] = diff
+                # latency_tracker[1, curID] = curTime - lat_time
+                pkt_idx = np.argwhere(np.isclose(
+                    latency_tracker[0, :], curID, atol=1e-11).flatten())
+                pkt_idx = pkt_idx.flatten()
+                pkt_idx = pkt_idx[0]
+                previously_sent_packets.append(pkt_idx)
+                pkts_sent_in_window_idx.append(pkt_idx)
+                simEvents = sort_events(simEvents)
+                sent_packets += 1
+            else:
+
+                # simEvents = remove_event(simEvents, 0)
+                # try:
+                busy_states = simEvents[0, :] >= curTime
+                # except:
+                #     pdb.set_trace()
+                simEvents[1, busy_states.flatten()] = 1
+                simEvents = append_event(
+                    simEvents, sim_end_time, 0, curID, curNodeID)
             simEvents = remove_event(simEvents, 0)
-            busy_states = np.logical_and(
-                simEvents[0, :] >= curTime, simEvents[0, :] < simEvents[0, -1])
-            simEvents[1, busy_states.flatten()] = 1
-            lat_time = latency_tracker[1, np.isclose(
-                latency_tracker[0, :], curID)]
-            diff = curTime - lat_time
-            if pflag:
-                print(
-                    f"pid: {curID} diff: {diff}, curTime: {curTime}, lat time: {lat_time}")
-
-            if diff < 0:
-                pdb.set_trace()
-
-            latency_tracker[1, np.isclose(
-                latency_tracker[0, :], curID, atol=1e-11)] = diff
-            # latency_tracker[1, curID] = curTime - lat_time
-            pkt_idx = np.argwhere(np.isclose(
-                latency_tracker[0, :], curID, atol=1e-11).flatten())
-            pkt_idx = pkt_idx.flatten()
-            pkt_idx = pkt_idx[0]
-            previously_sent_packets.append(pkt_idx)
-            pkts_sent_in_window_idx.append(pkt_idx)
-            simEvents = sort_events(simEvents)
-            sent_packets += 1
 
         elif curState == 1:
             new_state_added_flag = 0
             backoff = 0
             endState = simEvents[1, :] == 2
+            # try:
             assert np.sum(endState) == 1, f"Endstate error: {endState}"
+            # except AssertionError:
+            #     pdb.set_trace()
             endTime = simEvents[0, endState]
             num_backoff = 0
             while new_state_added_flag < 1:

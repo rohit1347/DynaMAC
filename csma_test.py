@@ -6,7 +6,7 @@ from qlearning_optimized import *
 import matplotlib.pyplot as plt
 # %%
 latency_final, xput_final, prot_arr = DynaMAC_somac_test(
-    num_n=30, num_p=400, duration=300)
+    num_n=30, num_p=400, duration=200)
 
 # %%
 plt.figure()
