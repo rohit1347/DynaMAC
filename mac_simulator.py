@@ -187,7 +187,7 @@ def generate_events(num_nodes=10, num_packets=3, sim_end_time=10, round=1):
     Returns:
         Num_py array -- Dimensions are [4,num_nodes*num_packets]. First row stores the event times, second row stores the state IDs, third row stores packet IDs, fourth row stores node IDs.
     """
-    event_resolution = 0.3*sim_end_time
+    event_resolution = 0.4*sim_end_time
     events = np.zeros((num_packets, num_nodes))
     for node in range(num_nodes):
         events[:, node] = np.random.exponential(

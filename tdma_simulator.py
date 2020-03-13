@@ -100,6 +100,10 @@ def tdma_simulator(events=None, frame_duration=2, num_slots=10, slot_time=0.05, 
             latency[event_iter] = 0
 #    print(events)
 
+    for post_event_iter in range(events_post.shape[1]):
+        if(events_post[0, post_event_iter] <= start_time + frame_duration):
+            events_post[0,post_event_iter] = events_post[0,post_event_iter] + poll_period
+            
     average_latency = np.mean(latency)
     transmission_time = last_packet_sent_time-start_time
     if(transmission_time == 0):
