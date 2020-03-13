@@ -4,7 +4,7 @@ import numpy as np
 import pdb
 import matplotlib.pyplot as plt
 import seaborn as sns
-
+from scipy import stats
 # %%
 
 
@@ -175,7 +175,7 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
 # %%
 
 
-def generate_events(num_nodes=10, num_packets=3, sim_end_time=10, round=1):
+def generate_events(num_nodes=10, num_packets=3, sim_end_time=10, round=1, window_size=10):
     """Generates a single events and states matrix by appending.
 
     Keyword Arguments:
@@ -187,11 +187,13 @@ def generate_events(num_nodes=10, num_packets=3, sim_end_time=10, round=1):
     Returns:
         Num_py array -- Dimensions are [4,num_nodes*num_packets]. First row stores the event times, second row stores the state IDs, third row stores packet IDs, fourth row stores node IDs.
     """
-    event_resolution = 0.4*sim_end_time
+
     events = np.zeros((num_packets, num_nodes))
+    # event_resolution = window_start + 0.5*window_size
     for node in range(num_nodes):
         events[:, node] = np.random.exponential(
-            scale=event_resolution, size=num_packets)
+            scale=0.5 * window_size, size=num_packets)
+        events[:, node] += node*window_size
     events = events.flatten()
     num_events = events.shape[0]
     # events.sort()
@@ -203,6 +205,8 @@ def generate_events(num_nodes=10, num_packets=3, sim_end_time=10, round=1):
     print(f'Events size in gen:{events.shape}')
     # ADD node id in the fourth row
     return events
+
+# %%
 
 
 def sort_events(events):
@@ -357,12 +361,13 @@ def generate_xput_plots(num_p=5, num_n_start=5, num_n_delta=5, num_n_end=50, mon
     fig2.show()
 
 
-def simEvents_plot(simEvents, iteration, duration=0):
+def simEvents_plot(simEvents, iteration, duration=0, flag=True):
     # Filtering to obtain left over packets (state = 0)
-    simEvents = simEvents[:, np.isclose(simEvents[1, :], 0)]
-    plt.figure(figsize=[9, 6])
-    sns.distplot(simEvents[0, :])
-    plt.axvline(x=duration)
-    plt.xlabel('Packet Timestamps')
-    plt.ylabel('Probability')
-    plt.title(f"Window: {iteration}")
+    if flag:
+        simEvents = simEvents[:, np.isclose(simEvents[1, :], 0)]
+        plt.figure(figsize=[9, 6])
+        sns.distplot(simEvents[0, :])
+        plt.axvline(x=duration)
+        plt.xlabel('Packet Timestamps')
+        plt.ylabel('Probability')
+        plt.title(f"Window: {iteration}")
