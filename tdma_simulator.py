@@ -115,15 +115,11 @@ def tdma_simulator(events=None, frame_duration=2, num_slots=10, slot_time=0.05, 
     # print(events_pre)
     # print('final_transmit_time')
     # print(final_transmit_time)
-    print('no_of_packets_sent')
-    print(no_of_packets_sent)
-    print('transmission_time')
-    print(transmission_time)
-    print('throughput')
-    print(throughput)
-    print('average_latency')
-    print(average_latency)
-    print("___________________________")
+    print(f'no_of_packets_sent:{no_of_packets_sent}')
+    print(f'transmission_time:{transmission_time}')
+    print(f'throughput:{throughput}')
+    print(f'average_latency:{average_latency}')
+    print("------------------------------")
     return throughput, average_latency, events_post
 
 # test scripts
