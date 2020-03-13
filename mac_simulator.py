@@ -100,9 +100,10 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
             simEvents[1, busy_states.flatten()] = 1
             lat_time = latency_tracker[1, np.isclose(
                 latency_tracker[0, :], curID)]
-            diff = curTime-lat_time
-            print(
-                f"pid: {curID} diff: {diff}, curTime: {curTime}, lat time: {lat_time}")
+            diff = curTime - lat_time
+            if pflag:
+                print(
+                    f"pid: {curID} diff: {diff}, curTime: {curTime}, lat time: {lat_time}")
 
             if diff < 0:
                 pdb.set_trace()
