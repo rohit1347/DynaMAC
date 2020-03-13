@@ -92,8 +92,12 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
         if curState == 0:
             if not isinstance(pkts_sent_in_window_idx, list):
                 pkts_sent_in_window_idx = list()
-            simEvents = append_event(
-                simEvents, curTime+packet_time, 2, curID, curNodeID)
+            if curTime + packet_time > sim_end_time:
+                simEvents = append_event(
+                    simEvents, sim_end_time, 0, curID, curNodeID)
+            else:
+                simEvents = append_event(
+                    simEvents, curTime+packet_time, 2, curID, curNodeID)
             simEvents = remove_event(simEvents, 0)
             busy_states = np.logical_and(
                 simEvents[0, :] >= curTime, simEvents[0, :] < simEvents[0, -1])
