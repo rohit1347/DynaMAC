@@ -37,21 +37,20 @@ def DynaMAC_switch_test(num_p=5, num_n=5, window_size=10, round=2, duration=200)
     return latency_array, xput_array
 
 
-def DynaMAC_somac_test(num_p=5, num_n=5, window_size=10, round=2, duration=200):
+def DynaMAC_somac_test(num_p=5, num_n=5, window_size=10, round=2, duration=200,simEvents=None,mac_init = 0,somac_en = 1):
     latency_array = np.zeros(1)
     xput_array = np.zeros(1)
     MAC_array = np.zeros(1)
-    MAC_flag = 0  # 0 - CSMA , 1 - TDMA
+    MAC_flag = mac_init  # 0 - CSMA , 1 - TDMA
     latency_tracker = None
     pre_packets = None
     g_dt = -2
-    simEvents = generate_events(
-        num_nodes=num_n, num_packets=num_p, sim_end_time=duration, round=round)
     simEvents_pre = simEvents
     simEvents_length = simEvents.shape[1]
     for iteration, window_start in enumerate(range(0, duration, window_size)):
         # print(simEvents)
-        simEvents_plot(simEvents, iteration+1, duration=duration)
+        if(iteration == 0):
+            simEvents_plot(simEvents, iteration+1, duration=duration)
         # https: // seaborn.pydata.org/generated/seaborn.distplot.html
         # if simEvents.shape[1] <= simEvents_length/2:
         if not MAC_flag:
@@ -62,13 +61,16 @@ def DynaMAC_somac_test(num_p=5, num_n=5, window_size=10, round=2, duration=200):
             #            print(simEvents.shape[1])
             xput, latency, simEvents = tdma_simulator(
                 events=simEvents, frame_duration=window_size, start_time=window_start, num_slots=num_n,
-                slot_time=0.1)
+                slot_time=0.2)
         latency_array = np.append(latency_array, latency)
         xput_array = np.append(xput_array, xput)
         decision_class = decision_final(
             xput_array, 1, mode=MAC_flag, g_dt=g_dt)
-        # MAC_flag, g_dt = decision_class.result_calc()
-        MAC_flag, g_dt = decision_class.decision, decision_class.g_dt
+#        decision_class = decision_final(
+#            latency_array, 0, mode=MAC_flag, g_dt=g_dt)
+#         MAC_flag, g_dt = decision_class.result_calc()
+        if(somac_en==1):
+            MAC_flag, g_dt = decision_class.decision, decision_class.g_dt
         print(MAC_flag)
         MAC_array = np.append(MAC_array, MAC_flag)
 
