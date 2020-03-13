@@ -26,11 +26,11 @@ def DynaMAC_switch_test(num_p=5, num_n=5, window_size=10, round=2, duration=200)
             latency, xput, _, simEvents, latency_tracker, pre_packets = csma_simulator(
                 num_nodes=num_n, num_packets=num_p, sim_start_time=window_start, duration=window_size,
                 simEvents=simEvents, latency_tracker=latency_tracker, previously_sent_packets=pre_packets)
-        else:
-            print(simEvents.shape[1])
-            xput, latency, simEvents = tdma_simulator(
-                events=simEvents, frame_duration=window_size, start_time=window_start, num_slots=num_n,
-                slot_time=0.1)
+        # else:
+        #     print(simEvents.shape[1])
+        #     xput, latency, simEvents = tdma_simulator(
+        #         events=simEvents, frame_duration=window_size, start_time=window_start, num_slots=num_n,
+        #         slot_time=0.1)
 
         latency_array = np.append(latency_array, latency)
         xput_array = np.append(xput_array, xput)
