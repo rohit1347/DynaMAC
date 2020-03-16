@@ -108,8 +108,8 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
             simEvents[1, busy_states.flatten()] = 1
             lat_time = latency_tracker[1, np.isclose(
                 latency_tracker[0, :], curID)]
-            if lat_time == 0:
-                pdb.set_trace()
+            # if lat_time == 0:
+            #     pdb.set_trace()
             diff = curTime - lat_time
             # if pflag:
             # print(
@@ -197,11 +197,12 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
         latency = np.mean(latency_tracker[1, np.asarray(
             pkts_sent_in_window_idx, dtype=int)])
         if latency > 2:
-            pdb.set_trace()
+            # pdb.set_trace()
+            print(f"Latency>2")
     else:
         latency = np.inf
-    print(
-        f"pre_track{latency_tracker[1,np.asarray(pkts_sent_in_window_idx,dtype=int)]}")
+    # print(
+    #     f"pre_track{latency_tracker[1,np.asarray(pkts_sent_in_window_idx,dtype=int)]}")
     # pdb.set_trace()
     global_latency = np.mean(
         latency_tracker[1, np.asarray(previously_sent_packets, dtype=int)])
@@ -217,7 +218,7 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
     print("---------------------------------------")
     print(
         f"Mean latency across windows: {global_latency}")
-    return latency, xput, tx_end_time, simEvents, latency_tracker, previously_sent_packets
+    return latency, packet_success_ratio, tx_end_time, simEvents, latency_tracker, previously_sent_packets
 
 
 # %%
@@ -338,27 +339,33 @@ def rezero_indices(events):
 
 # %%
 def CSMA_simulator(num_p=5, num_n=5, duration=1, packet_time=0.01, simEvents=None):
+
     if not isinstance(simEvents, np.ndarray):
         i = 0
         tp = num_p*num_n
-        simEvents = np.zeros(shape=(4, tp))
+        simEvents = generate_events(
+            num_nodes=num_n, num_packets=num_p, sim_end_time=duration, window_size=duration/10)
+        latency_tracker = None
+        prev_packets = None
         # Initialzing a random simEvents for while loop to start
     else:
         i = 0
         tp = simEvents.shape[1]
     while simEvents.shape[1] > 0:
         print(f"simEvents length: {simEvents.shape[1]}")
-        if i == 0:
-            latency, xput, tx_end_time, simEvents, latency_tracker, prev_packets = csma_simulator(
-                num_nodes=num_n, num_packets=num_p, sim_start_time=i, duration=duration, pflag=0, round=2, packet_time=packet_time)
-            i += 1
-        else:
-            latency, xput, tx_end_time, simEvents, latency_tracker, prev_packets = csma_simulator(
-                simEvents=simEvents, sim_start_time=i*duration, duration=duration, pflag=0, latency_tracker=latency_tracker, packet_time=packet_time, previously_sent_packets=prev_packets)
-            i += 1
-    global_xput = (tp/tx_end_time)[0]
+        # if i == 0:
+        #     latency, xput, tx_end_time, simEvents, latency_tracker, prev_packets = csma_simulator(
+        #         num_nodes=num_n, num_packets=num_p, sim_start_time=i, duration=duration, pflag=0, round=2, packet_time=packet_time)
+        #     i += 1
+        # else:
+        latency, xput, tx_end_time, simEvents, latency_tracker, prev_packets = csma_simulator(
+            simEvents=simEvents, sim_start_time=i*duration, duration=duration, pflag=0, latency_tracker=latency_tracker, packet_time=packet_time, previously_sent_packets=prev_packets)
+        i += 1
+    global_xput = xput
+    global_latency = np.mean(
+        latency_tracker[1, np.asarray(prev_packets, dtype=int)])
     print(f"Throughput={xput} packets/second")
-    return tp, global_xput, latency, latency_tracker
+    return tp, global_xput, global_latency, latency_tracker
 
 
 def create_latency_tracker(simEvents):
@@ -368,49 +375,6 @@ def create_latency_tracker(simEvents):
     latency_tracker[1, :] = simEvents[0, :]
     return latency_tracker
 # %% Generating plots function
-
-
-def generate_xput_plots(num_p=5, num_n_start=5, num_n_delta=5, num_n_end=50, montecarlo=1, duration=1):
-    assert montecarlo >= 1, 'Number of montecarlo runs must be atleast 1'
-    num_ns = range(num_n_start, num_n_end, num_n_delta)
-    xputs = np.zeros(shape=(montecarlo, len(num_ns)))
-    total_packets = np.zeros(shape=(montecarlo, len(num_ns)))
-    mc_latency = np.zeros(shape=(montecarlo, len(num_ns)))
-    for it in range(0, montecarlo):
-        for count, num_n in enumerate(num_ns):
-            tp, xput, latency, _ = CSMA_simulator(
-                num_p=5, num_n=num_n, duration=duration)
-            total_packets[it, count] = tp
-            xputs[it, count] = xput
-            mc_latency[it, count] = latency
-    xputs_mean = np.mean(xputs, axis=0)
-    total_packets_mean = np.mean(total_packets, axis=0)
-    xputs_var = np.var(xputs, axis=0)
-    latency_mean = np.mean(mc_latency, axis=0)
-    latency_var = np.var(mc_latency, axis=0)
-    fig1 = plt.figure(num=1, figsize=[9, 6])
-    plt.errorbar(num_ns, xputs_mean,
-                 yerr=xputs_var, label='Throughput')
-    plt.fill_between(num_ns, xputs_mean-xputs_var,
-                     xputs_mean+xputs_var, alpha=0.5)
-    plt.grid(True)
-    plt.xlabel('Number of Nodes')
-    plt.ylabel('Throughput (pkt/sec)')
-    plt.legend(loc='lower right')
-    plt.title('CSMA: Throughput vs Number of Nodes')
-    fig1.show()
-    print(latency_mean, latency_var)
-    fig2 = plt.figure(num=2, figsize=[9, 6])
-    plt.errorbar(num_ns, latency_mean,
-                 yerr=latency_var, label='Latency', color='red')
-    plt.fill_between(num_ns, latency_mean-latency_var,
-                     latency_mean+latency_var, alpha=0.5, facecolor='r')
-    plt.grid(True)
-    plt.xlabel('Number of Nodes')
-    plt.ylabel('Average Latency/packet (s)')
-    plt.legend(loc='lower right')
-    plt.title('CSMA: Average Latency vs Number of Nodes')
-    fig2.show()
 
 
 def simEvents_plot(simEvents, iteration, duration=0, flag=True):

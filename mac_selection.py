@@ -17,7 +17,7 @@ def DynaMAC_switch_test(num_p=5, num_n=5, window_size=10, round=2, duration=200)
     tp = num_p*num_n
     simEvents_length = simEvents.shape[1]
     for iteration, window_start in enumerate(range(0, duration, window_size)):
-        simEvents_plot(simEvents, iteration+1, duration=duration, flag=True)
+        # simEvents_plot(simEvents, iteration+1, duration=duration, flag=True)
         # https: // seaborn.pydata.org/generated/seaborn.distplot.html
         # if simEvents.shape[1] <= simEvents_length/2:
         if window_start >= duration/2:
@@ -37,7 +37,7 @@ def DynaMAC_switch_test(num_p=5, num_n=5, window_size=10, round=2, duration=200)
     return latency_array, xput_array
 
 
-def DynaMAC_somac_test(num_p=5, num_n=5, window_size=10, round=2, duration=200,simEvents=None,mac_init = 0,somac_en = 1):
+def DynaMAC_somac_test(num_p=5, num_n=5, window_size=10, round=2, duration=200, simEvents=None, mac_init=0, somac_en=1):
     latency_array = np.zeros(1)
     xput_array = np.zeros(1)
     MAC_array = np.zeros(1)
@@ -69,9 +69,58 @@ def DynaMAC_somac_test(num_p=5, num_n=5, window_size=10, round=2, duration=200,s
 #        decision_class = decision_final(
 #            latency_array, 0, mode=MAC_flag, g_dt=g_dt)
 #         MAC_flag, g_dt = decision_class.result_calc()
-        if(somac_en==1):
+        if(somac_en == 1):
             MAC_flag, g_dt = decision_class.decision, decision_class.g_dt
         print(MAC_flag)
         MAC_array = np.append(MAC_array, MAC_flag)
 
     return latency_array, xput_array, MAC_array, simEvents_pre
+
+
+def generate_xput_plots(num_p=5, num_n_start=5, num_n_delta=5, num_n_end=50, montecarlo=1, duration=1):
+    assert montecarlo >= 1, 'Number of montecarlo runs must be atleast 1'
+    num_ns = range(num_n_start, num_n_end, num_n_delta)
+    xputs = np.zeros(shape=(montecarlo, len(num_ns)))
+    total_packets = np.zeros(shape=(montecarlo, len(num_ns)))
+    mc_latency = np.zeros(shape=(montecarlo, len(num_ns)))
+    for it in range(0, montecarlo):
+        for count, num_n in enumerate(num_ns):
+            latency_window_array, xput_window_array = DynaMAC_switch_test(
+                num_p=num_p, num_n=num_n, duration=100)
+            latency, xput = np.mean(
+                latency_window_array), np.mean(xput_window_array)
+            # tp, xput, latency, _ = CSMA_simulator(
+            #     num_p=num_p, num_n=num_n, duration=duration)
+            # total_packets[it, count] = tp
+            xputs[it, count] = xput
+            mc_latency[it, count] = latency
+    xputs_mean = np.mean(xputs, axis=0)
+    # total_packets_mean = np.mean(total_packets, axis=0)
+    xputs_var = np.var(xputs, axis=0)
+    latency_mean = np.mean(mc_latency, axis=0)
+    latency_var = np.var(mc_latency, axis=0)
+    fig1 = plt.figure(num=1, figsize=[9, 6])
+    plt.errorbar(num_ns, xputs_mean,
+                 yerr=xputs_var, label='Throughput')
+    plt.fill_between(num_ns, xputs_mean-xputs_var,
+                     xputs_mean+xputs_var, alpha=0.5)
+    plt.grid(True)
+    plt.xlabel('Number of Nodes')
+    plt.ylabel('Normalized Throughput')
+    plt.legend(loc='lower right')
+    plt.title('CSMA: Throughput vs Number of Nodes')
+    fig1.show()
+    print(latency_mean, latency_var)
+    fig2 = plt.figure(num=2, figsize=[9, 6])
+    plt.errorbar(num_ns, latency_mean,
+                 yerr=latency_var, label='Latency', color='red')
+    plt.fill_between(num_ns, latency_mean-latency_var,
+                     latency_mean+latency_var, alpha=0.5, facecolor='r')
+    plt.grid(True)
+    plt.xlabel('Number of Nodes')
+    plt.ylabel('Average Latency/packet (s)')
+    plt.xticks(fontsize=14)
+    plt.yticks(fontsize=14)
+    plt.legend(loc='lower right')
+    plt.title('CSMA: Average Latency vs Number of Nodes')
+    fig2.show()
