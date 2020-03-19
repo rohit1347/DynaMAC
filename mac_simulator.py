@@ -218,7 +218,7 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
     print("---------------------------------------")
     print(
         f"Mean latency across windows: {global_latency}")
-    return latency, packet_success_ratio, tx_end_time, simEvents, latency_tracker, previously_sent_packets
+    return latency, xput, tx_end_time, simEvents, latency_tracker, previously_sent_packets
 
 
 # %%

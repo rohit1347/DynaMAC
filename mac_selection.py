@@ -89,6 +89,7 @@ def generate_xput_plots(num_p=5, num_n_start=5, num_n_delta=5, num_n_end=50, mon
                 num_p=num_p, num_n=num_n, duration=100)
             latency, xput = np.mean(
                 latency_window_array), np.mean(xput_window_array)
+            # latency = np.sum(xput_window_array)
             # tp, xput, latency, _ = CSMA_simulator(
             #     num_p=num_p, num_n=num_n, duration=duration)
             # total_packets[it, count] = tp
