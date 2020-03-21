@@ -6,14 +6,18 @@ from qlearning_optimized import *
 # %%
 
 
-def DynaMAC_switch_test(num_p=5, num_n=5, window_size=10, round=2, duration=200):
+def DynaMAC_switch_test(num_p=5, num_n=5, window_size=10, round=2, duration=200, reg=0):
     latency_array = np.zeros(1)
     xput_array = np.zeros(1)
     MAC_flag = 0
     latency_tracker = None
     pre_packets = None
-    simEvents = generate_events(
-        num_nodes=num_n, num_packets=num_p, sim_end_time=duration, round=round)
+    if reg:
+        simEvents = generate_events_reg(
+            num_nodes=num_n, num_packets=num_p, sim_end_time=duration, round=round)
+    else:
+        simEvents = generate_events(
+            num_nodes=num_n, num_packets=num_p, sim_end_time=duration, round=round)
     tp = num_p*num_n
     simEvents_length = simEvents.shape[1]
     for iteration, window_start in enumerate(range(0, duration, window_size)):
@@ -86,7 +90,7 @@ def generate_xput_plots(num_p=5, num_n_start=5, num_n_delta=5, num_n_end=50, mon
     for it in range(0, montecarlo):
         for count, num_n in enumerate(num_ns):
             latency_window_array, xput_window_array = DynaMAC_switch_test(
-                num_p=num_p, num_n=num_n, duration=100)
+                num_p=num_p, num_n=num_n, duration=100, reg=1)
             latency, xput = np.mean(
                 latency_window_array), np.mean(xput_window_array)
             # latency = np.sum(xput_window_array)

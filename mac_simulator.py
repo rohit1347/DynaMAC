@@ -387,3 +387,60 @@ def simEvents_plot(simEvents, iteration, duration=0, flag=True):
         plt.xlabel('Packet Timestamps')
         plt.ylabel('Probability')
         plt.title(f"Window: {iteration}")
+
+
+def generate_events_reg(num_nodes=10, num_packets=3, sim_end_time=10, round=1, window_size=10):
+    """Generates a single events and states matrix by appending.
+    Keyword Arguments:
+        num_nodes {int} -- Number of nodes in the simulation (default: {10})
+        num_packets {int} -- Number of packets per node (default: {3})
+        sim_end_time {int} -- Simulation end time (default: {10})
+        event_resolution {float} -- Lambda for exponential function (default: {0.5})
+    Returns:
+        Num_py array -- Dimensions are [4,num_nodes*num_packets]. First row stores the event times, second row stores the state IDs, third row stores packet IDs, fourth row stores node IDs.
+    """
+
+    events = np.zeros((num_packets, num_nodes))
+    # event_resolution = window_start + 0.5*window_size
+    for node in range(num_nodes):
+        events[:, node] = np.random.exponential(
+            scale=0.5 * window_size, size=num_packets)
+        events[:, node] += node*window_size
+    events = events.flatten()
+    num_events = events.shape[0]
+    # events.sort()
+    events = roundoff_events(events, round=round)
+    events = np.vstack((events, np.zeros(shape=events.shape)))
+    events = np.vstack((events, np.arange(num_events, dtype=int)))
+    events = np.vstack((events, np.repeat([range(num_nodes)], num_packets)))
+    events = sort_events(events)
+    print(f'Events size in gen:{events.shape}')
+    # ADD node id in the fourth row
+    return events
+
+
+def generate_events_exp(num_nodes=10, num_packets=3, sim_end_time=10, event_resolution=0.5, round=1):
+    """Generates a single events and states matrix by appending.
+    Keyword Arguments:
+        num_nodes {int} -- Number of nodes in the simulation (default: {10})
+        num_packets {int} -- Number of packets per node (default: {3})
+        sim_end_time {int} -- Simulation end time (default: {10})
+        event_resolution {float} -- Lambda for exponential function (default: {0.5})
+    Returns:
+        Num_py array -- Dimensions are [3,num_nodes*num_packets]. First row stores the event times, second row stores the state IDs, third row stores packet IDs, fourth row stores node IDs.
+    """
+    events = np.zeros((num_packets, num_nodes))
+    for node in range(num_nodes):
+        events[:, node] = np.random.exponential(
+            scale=event_resolution, size=num_packets)
+    events = events.flatten()
+    num_events = events.shape[0]
+    # events.sort()
+    events = roundoff_events(events, round=round)
+    events = np.vstack((events, np.zeros(shape=events.shape)))
+    events = np.vstack((events, np.arange(num_events, dtype=np.int8)))
+    events = np.vstack((events, np.repeat([range(num_nodes)], num_packets)))
+    events = sort_events(events)
+    print(f'Events size in gen:{events.shape}')
+    # ADD node id in the fourth row
+    return events

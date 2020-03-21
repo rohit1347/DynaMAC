@@ -43,8 +43,5 @@ import matplotlib.pyplot as plt
 #_, xput, _, lat = CSMA_simulator(duration=500, packet_time=0.01)
 
 # %% Generating plots
-generate_xput_plots(montecarlo=3, num_n_end=20,
-                    num_p=100, duration=100, num_n_delta=50)
-
-
-# %%
+generate_xput_plots(montecarlo=10, num_n_end=20,
+                    num_p=1000, duration=100, num_n_delta=2)
