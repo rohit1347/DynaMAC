@@ -41,7 +41,7 @@ def DynaMAC_switch_test(num_p=5, num_n=5, window_size=10, round=2, duration=200,
     return latency_array, xput_array
 
 
-def DynaMAC_somac_test(num_p=5, num_n=5, window_size=10, round=2, duration=200, simEvents=None, mac_init=0, somac_en=1):
+def DynaMAC_somac_test(num_p=5, num_n=5, window_size=10, round=2, duration=200, simEvents=None, mac_init=0, somac_en=1,opt_type = 2,mode=2):
     latency_array = np.zeros(1)
     xput_array = np.zeros(1)
     MAC_array = np.zeros(1)
@@ -65,11 +65,20 @@ def DynaMAC_somac_test(num_p=5, num_n=5, window_size=10, round=2, duration=200, 
             #            print(simEvents.shape[1])
             xput, latency, simEvents = tdma_simulator(
                 events=simEvents, frame_duration=window_size, start_time=window_start, num_slots=num_n,
-                slot_time=0.2)
+                slot_time=0.05)
         latency_array = np.append(latency_array, latency)
-        xput_array = np.append(xput_array, xput)
-        decision_class = decision_final(
-            xput_array, 1, mode=MAC_flag, g_dt=g_dt)
+        xput_array = np.append(xput_array, min(xput,100))
+        if(opt_type==0):
+            decision_class = decision_final(
+                xput_array, 1, mode=MAC_flag, g_dt=g_dt)
+        elif(opt_type==1):
+            decision_class = decision_final(
+                latency_array, 0, mode=MAC_flag, g_dt=g_dt)
+        else:
+            decision_class = decision_final(
+                (xput_array/100.0 - latency_array/5.0), 1, mode=mode, g_dt=g_dt)            
+#        decision_class = decision_final(
+#            xput_array, 1, mode=MAC_flag, g_dt=g_dt)
 #        decision_class = decision_final(
 #            latency_array, 0, mode=MAC_flag, g_dt=g_dt)
 #         MAC_flag, g_dt = decision_class.result_calc()

@@ -224,7 +224,7 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
 # %%
 
 
-def generate_events(num_nodes=10, num_packets=3, sim_end_time=10, round=1, window_size=10):
+def generate_events(num_nodes=10, num_packets=3, start_time = 0, sim_end_time=10, round=1, window_size=10,id_start = 0):
     """Generates a single events and states matrix by appending.
     Keyword Arguments:
         num_nodes {int} -- Number of nodes in the simulation (default: {10})
@@ -234,25 +234,39 @@ def generate_events(num_nodes=10, num_packets=3, sim_end_time=10, round=1, windo
     Returns:
         Num_py array -- Dimensions are [4,num_nodes*num_packets]. First row stores the event times, second row stores the state IDs, third row stores packet IDs, fourth row stores node IDs.
     """
+#    events = np.zeros((num_packets, num_nodes))
+    
     events = np.zeros((num_packets, num_nodes))
+    # event_resolution = window_start + 0.5*window_size
     for node in range(num_nodes):
-        if(node % 4 == 0):
-            events[:, node] = np.random.uniform(
-                0, 0.2*sim_end_time, num_packets)
-        elif(node % 4 == 1):
-            events[:, node] = np.random.uniform(
-                0.8*sim_end_time, sim_end_time, num_packets)
-        elif(node % 4 == 2):
-            events[:, node] = np.random.normal(
-                0.5*sim_end_time, 5*window_size, num_packets)
-        else:
-            events[:, node] = np.random.random(num_packets)*sim_end_time
+        events[:, node] = np.random.exponential(
+            scale=0.5 * window_size, size=num_packets)
+        events[:, node] += node*window_size
+        
+    t_events = np.random.uniform(
+        start_time, start_time + 0.95*sim_end_time, num_packets)
+            
+    for node in range(num_nodes):
+        
+        events[:, node] = t_events
+#        if(node % 4 == 0):
+#            events[:, node] = np.random.uniform(
+#                start_time, start_time + 0.7*sim_end_time, num_packets)
+#        elif(node % 4 == 1):
+#            events[:, node] = np.random.uniform(
+#                start_time + 0.3*sim_end_time, start_time + sim_end_time, num_packets)
+#        elif(node % 4 == 2):
+#            events[:, node] = np.random.normal(
+#                start_time + 0.5*sim_end_time, 0.2*sim_end_time, num_packets)
+#        else:
+#            events[:, node] = start_time + np.random.random(num_packets)*(sim_end_time-start_time)
+            
     events = events.flatten()
     num_events = events.shape[0]
     # events.sort()
     events = roundoff_events(events, round=round)
     events = np.vstack((events, np.zeros(shape=events.shape)))
-    events = np.vstack((events, np.arange(num_events, dtype=int)))
+    events = np.vstack((events, np.arange(id_start , id_start + num_events, dtype=int) ))
     events = np.vstack((events, np.repeat([range(num_nodes)], num_packets)))
     events = sort_events(events)
     print(f'Events size in gen:{events.shape}')

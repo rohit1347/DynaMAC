@@ -8,7 +8,7 @@ from matplotlib.legend_handler import HandlerLine2D
 
 class QLearningBoltzmann:
 
-   def __init__(self, prot, learn_rate=0.3, discount=0.8, T=0.1):
+   def __init__(self, prot, learn_rate=0.4, discount=0.8, T=0.9):
        self.q_table = np.zeros((2, 2))
 
        self.prob_table = np.zeros((2, 2)) + 0.5
@@ -80,7 +80,7 @@ class QLearningBoltzmann:
 
 class QLearningEGreedy:
 
-    def __init__(self, prot, learn_rate=0.3, discount=0.8, epsilon=0):
+    def __init__(self, prot, learn_rate=0.4, discount=0.8, epsilon=0.1):
 
         self.q_table = np.zeros((2, 2))
         #self.q_table	= np.random.rand(2, 2) - 0.5
@@ -140,8 +140,8 @@ class QLearningEGreedy:
 
 class decision_final:
     def calc_reward(self, curr, prev):  # {{{
-        if curr > prev:
-            reward = curr / prev - 1. if prev > 0. else 0.
+        if curr > 0.95*prev:
+            reward = (curr / (0.95*prev)) - 1. if prev > 0. else 0.
         else:
             reward = - (prev / curr - 1.) if curr > 0. else 0.
         if reward > 1. or reward < -1:
@@ -170,8 +170,9 @@ class decision_final:
         # ML modules
         if mode == 2:
             somac = QLearningEGreedy(protid)
-#        if mode == 3:
-#            somac = QlearningBoltzmann(protid)
+#            somac = QLearningBoltzmann(protid)
+        if mode == 3:
+            somac = QLearningBoltzmann(protid)
         decision = protid
         
         if np.any(np.equal(metric, None)) == False:
