@@ -20,17 +20,9 @@ The main functions involved in simulating DynaMAC are:
 - `Dynamac_SOMAC_test`
 
 # Steps to run the code
-- Open dynamac_switch_test.py
-- This file has parameters like number of nodes, number of packets per node per second, high traffic duration, low_traffic duration and the window size after which MAC decision is re-computed and updated.
-- Set the parameters to match the network you wish to simulate for
-- Run the entire file
-- The current version of the code simulates the throughput and latency of the network:
--- If only TDMA is employed
--- If only CSMA is employed
--- DynaMAC with eplison-greedy approach
--- DynaAMC with Softmax approach
--- Plots for metric comparison across all the network conditions mentioned above.
 
-# Python Notebook
-
-A sample version of the above test and results are also included in a python notebook and inluded in the repository
+- A sample version of the above test and results are also included in a python notebook demo.ipnb and inluded in the repository
+- This notebook allows you to run and test the following:
+- Run Standalone CSMA simulator for inreasing number of nodes and different network conditions over configurable monte-carlo simulations
+- Run Standalone TDMA simulator for inreasing number of nodes and different network conditions over configurable monte-carlo simulations
+- Run DynaMAC comparison for a given network condition and get a comparison of performance across TDMA only, CSMA only , DynaMAC with eplison greedy approach and DynaMAC with softmax approach
