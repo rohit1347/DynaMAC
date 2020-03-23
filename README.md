@@ -1,9 +1,9 @@
 # DynaMAC
-
-ECE257B Project - Reinforcement Learning based MAC selection engine
-<img src="dynamac3.jpg"  alt="DynaMAC Results">
-
 ---
+
+**ECE257B Project - Reinforcement Learning based MAC selection engine** - *Ankit Agarwal, Rohit Kumar and Yeswanth Guntupalli*
+<p style="text-align: center;"><img src="dynamac3.jpg" width=800 alt="DynaMAC Results"></p>
+
 
 ## Description
 This repo contains the simulation code used for simulating and evaluating DynaMAC - an RL based MAC Selection Engine. 
