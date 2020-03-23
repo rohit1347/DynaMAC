@@ -102,7 +102,18 @@ def DynaMAC_somac_test(num_p=5, num_n=5, window_size=10, round=2, duration=200, 
     return latency_array, xput_array, MAC_array, simEvents_pre
 
 
-def generate_xput_plots(num_p=5, num_n_start=5, num_n_delta=5, num_n_end=50, montecarlo=1, duration=1):
+def generate_xput_plots(num_p=5, num_n_start=5, num_n_delta=5, num_n_end=50, montecarlo=1, duration=1, reg=1):
+    """[summary]
+
+    Keyword Arguments:
+        num_p {int} -- Number of packets (default: {5})
+        num_n_start {int} -- Number of nodes to start simulation with (default: {5})
+        num_n_delta {int} -- Difference in number of nodes for following simulation (default: {5})
+        num_n_end {int} -- Number of nodes to end the simulation with (default: {50})
+        montecarlo {int} -- Number of montecarlo runs (default: {1})
+        duration {int} -- Total simulation duration (default: {1})
+        reg {int} -- Whether to generate events based on old (0) distribution or new (1) (default: {0})
+    """
     assert montecarlo >= 1, 'Number of montecarlo runs must be atleast 1'
     num_ns = range(num_n_start, num_n_end, num_n_delta)
     xputs = np.zeros(shape=(montecarlo, len(num_ns)))
@@ -111,7 +122,7 @@ def generate_xput_plots(num_p=5, num_n_start=5, num_n_delta=5, num_n_end=50, mon
     for it in range(0, montecarlo):
         for count, num_n in enumerate(num_ns):
             latency_window_array, xput_window_array = DynaMAC_switch_test(
-                num_p=num_p, num_n=num_n, duration=100, reg=1)
+                num_p=num_p, num_n=num_n, duration=100, reg=reg)
             latency, xput = np.mean(
                 latency_window_array), np.mean(xput_window_array)
             xputs[it, count] = xput
