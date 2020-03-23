@@ -6,10 +6,24 @@ from qlearning_optimized import *
 # %%
 
 
-def DynaMAC_switch_test(num_p=5, num_n=5, window_size=10, round=2, duration=200, reg=0):
+def DynaMAC_switch_test(num_p=5, num_n=5, window_size=10, round=2, duration=200, reg=0, MAC_flag=0):
+    """Performs a basic switch test for DynaMAC by controlling the MAC_flag variable.
+
+    Keyword Arguments:
+        num_p {int} -- Number of packets per node (default: {5})
+        num_n {int} -- Number of nodes in the experiment (default: {5})
+        window_size {int} -- Time window size per MAC protocol (default: {10})
+        round {int} -- Precision of the event times, higher precision leads to lesser backoffs. (default: {2})
+        duration {int} -- Duration for the entire simulation. Simulation consists of multiple windows (default: {200})
+        reg {int} -- Whether the old method of generating events is to be used (default: {0})
+        MAC_flag {int} -- Represents which MAC protocol is to be run. 0 represents CSMA and , TDMA (default: {0})
+
+    Returns:
+        latency_array {np.array} -- Latency in each window
+        xput_array {np.array} -- Throughput in each window
+    """
     latency_array = np.zeros(1)
     xput_array = np.zeros(1)
-    MAC_flag = 0
     latency_tracker = None
     pre_packets = None
     if reg:
@@ -24,24 +38,22 @@ def DynaMAC_switch_test(num_p=5, num_n=5, window_size=10, round=2, duration=200,
         # simEvents_plot(simEvents, iteration+1, duration=duration, flag=True)
         # https: // seaborn.pydata.org/generated/seaborn.distplot.html
         # if simEvents.shape[1] <= simEvents_length/2:
-        if window_start >= duration/2:
-            MAC_flag = 1
         if not MAC_flag:
             latency, xput, _, simEvents, latency_tracker, pre_packets = csma_simulator(
                 num_nodes=num_n, num_packets=num_p, sim_start_time=window_start, duration=window_size,
                 simEvents=simEvents, latency_tracker=latency_tracker, previously_sent_packets=pre_packets)
-        # else:
-        #     print(simEvents.shape[1])
-        #     xput, latency, simEvents = tdma_simulator(
-        #         events=simEvents, frame_duration=window_size, start_time=window_start, num_slots=num_n,
-        #         slot_time=0.1)
+        else:
+            print(simEvents.shape[1])
+            xput, latency, simEvents = tdma_simulator(
+                events=simEvents, frame_duration=window_size, start_time=window_start, num_slots=num_n,
+                slot_time=0.1)
 
         latency_array = np.append(latency_array, latency)
         xput_array = np.append(xput_array, xput)
     return latency_array, xput_array
 
 
-def DynaMAC_somac_test(num_p=5, num_n=5, window_size=10, round=2, duration=200, simEvents=None, mac_init=0, somac_en=1,opt_type = 2,mode=2):
+def DynaMAC_somac_test(num_p=5, num_n=5, window_size=10, round=2, duration=200, simEvents=None, mac_init=0, somac_en=1, opt_type=2, mode=2):
     latency_array = np.zeros(1)
     xput_array = np.zeros(1)
     MAC_array = np.zeros(1)
@@ -67,16 +79,16 @@ def DynaMAC_somac_test(num_p=5, num_n=5, window_size=10, round=2, duration=200, 
                 events=simEvents, frame_duration=window_size, start_time=window_start, num_slots=num_n,
                 slot_time=0.05)
         latency_array = np.append(latency_array, latency)
-        xput_array = np.append(xput_array, min(xput,100))
-        if(opt_type==0):
+        xput_array = np.append(xput_array, min(xput, 100))
+        if(opt_type == 0):
             decision_class = decision_final(
                 xput_array, 1, mode=MAC_flag, g_dt=g_dt)
-        elif(opt_type==1):
+        elif(opt_type == 1):
             decision_class = decision_final(
                 latency_array, 0, mode=MAC_flag, g_dt=g_dt)
         else:
             decision_class = decision_final(
-                (xput_array/100.0 - latency_array/5.0), 1, mode=mode, g_dt=g_dt)            
+                (xput_array/100.0 - latency_array/5.0), 1, mode=mode, g_dt=g_dt)
 #        decision_class = decision_final(
 #            xput_array, 1, mode=MAC_flag, g_dt=g_dt)
 #        decision_class = decision_final(
@@ -102,10 +114,6 @@ def generate_xput_plots(num_p=5, num_n_start=5, num_n_delta=5, num_n_end=50, mon
                 num_p=num_p, num_n=num_n, duration=100, reg=1)
             latency, xput = np.mean(
                 latency_window_array), np.mean(xput_window_array)
-            # latency = np.sum(xput_window_array)
-            # tp, xput, latency, _ = CSMA_simulator(
-            #     num_p=num_p, num_n=num_n, duration=duration)
-            # total_packets[it, count] = tp
             xputs[it, count] = xput
             mc_latency[it, count] = latency
     xputs_mean = np.mean(xputs, axis=0)

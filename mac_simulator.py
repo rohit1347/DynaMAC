@@ -224,7 +224,7 @@ def csma_simulator(num_nodes=10, num_packets=3, sim_start_time=0, duration=10, p
 # %%
 
 
-def generate_events(num_nodes=10, num_packets=3, start_time = 0, sim_end_time=10, round=1, window_size=10,id_start = 0):
+def generate_events(num_nodes=10, num_packets=3, start_time=0, sim_end_time=10, round=1, window_size=10, id_start=0):
     """Generates a single events and states matrix by appending.
     Keyword Arguments:
         num_nodes {int} -- Number of nodes in the simulation (default: {10})
@@ -235,19 +235,19 @@ def generate_events(num_nodes=10, num_packets=3, start_time = 0, sim_end_time=10
         Num_py array -- Dimensions are [4,num_nodes*num_packets]. First row stores the event times, second row stores the state IDs, third row stores packet IDs, fourth row stores node IDs.
     """
 #    events = np.zeros((num_packets, num_nodes))
-    
+
     events = np.zeros((num_packets, num_nodes))
     # event_resolution = window_start + 0.5*window_size
     for node in range(num_nodes):
         events[:, node] = np.random.exponential(
             scale=0.5 * window_size, size=num_packets)
         events[:, node] += node*window_size
-        
+
     t_events = np.random.uniform(
         start_time, start_time + 0.95*sim_end_time, num_packets)
-            
+
     for node in range(num_nodes):
-        
+
         events[:, node] = t_events
 #        if(node % 4 == 0):
 #            events[:, node] = np.random.uniform(
@@ -260,13 +260,14 @@ def generate_events(num_nodes=10, num_packets=3, start_time = 0, sim_end_time=10
 #                start_time + 0.5*sim_end_time, 0.2*sim_end_time, num_packets)
 #        else:
 #            events[:, node] = start_time + np.random.random(num_packets)*(sim_end_time-start_time)
-            
+
     events = events.flatten()
     num_events = events.shape[0]
     # events.sort()
     events = roundoff_events(events, round=round)
     events = np.vstack((events, np.zeros(shape=events.shape)))
-    events = np.vstack((events, np.arange(id_start , id_start + num_events, dtype=int) ))
+    events = np.vstack(
+        (events, np.arange(id_start, id_start + num_events, dtype=int)))
     events = np.vstack((events, np.repeat([range(num_nodes)], num_packets)))
     events = sort_events(events)
     print(f'Events size in gen:{events.shape}')
@@ -338,6 +339,17 @@ def append_event(events, newTime, newState, newID, newNodeID):
 
 
 def roundoff_events(events, round=1):
+    """Controls the precision of the event times. Higher precision will lead to lower backoffs in CSMA.
+
+    Arguments:
+        events {simEvents} -- Takes given simEvents and rounds off the event times as specified by round variable.
+
+    Keyword Arguments:
+        round {int} -- Controls precision of the event times. Round represents the position after decimal. (default: {1})
+
+    Returns:
+        simEvents -- New modified simEvents with given precision.
+    """
     return np.round(events, decimals=round)
 
 
@@ -353,6 +365,18 @@ def rezero_indices(events):
 
 # %%
 def CSMA_simulator(num_p=5, num_n=5, duration=1, packet_time=0.01, simEvents=None):
+    """DEPRECATED: Old CSMA simulator to get CSMA stats across multiple windows.
+
+    Keyword Arguments:
+        num_p {int} -- Number of packets (default: {5})
+        num_n {int} -- Number of nodes (default: {5})
+        duration {int} -- Duration over which simulator is to be run. Total duration contains multiple windows. (default: {1})
+        packet_time {float} -- Packet transmission time. Same for all packets in the system. (default: {0.01})
+        simEvents {np.array} -- Generate using generate_events (default: {None})
+
+    Returns:
+        [np.array] -- Stats for throughput and latency across windows.
+    """
 
     if not isinstance(simEvents, np.ndarray):
         i = 0
@@ -392,6 +416,16 @@ def create_latency_tracker(simEvents):
 
 
 def simEvents_plot(simEvents, iteration, duration=0, flag=True):
+    """Given a simEvents created from generate_events, provides a plot of the event distribution.
+
+    Arguments:
+        simEvents {np.array} -- simEvents generated from generate_events
+        iteration {int} -- To generate a plot with an iteration label.
+
+    Keyword Arguments:
+        duration {int} -- Duration for which the events were generated (default: {0})
+        flag {bool} -- Controls whether function should run at all or not. (default: {True})
+    """
     # Filtering to obtain left over packets (state = 0)
     if flag:
         simEvents = simEvents[:, np.isclose(simEvents[1, :], 0)]
