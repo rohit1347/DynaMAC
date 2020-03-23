@@ -23,6 +23,6 @@ The main functions involved in simulating DynaMAC are:
 
 - A sample version of the above test and results are also included in a python notebook demo.ipnb and inluded in the repository
 - This notebook allows you to run and test the following:
--- Run Standalone CSMA simulator for inreasing number of nodes and different network conditions over configurable monte-carlo simulations
--- Run Standalone TDMA simulator for inreasing number of nodes and different network conditions over configurable monte-carlo simulations
--- Run DynaMAC comparison for a given network condition and get a comparison of performance across TDMA only, CSMA only , DynaMAC with eplison greedy approach and DynaMAC with softmax approach
+- Run Standalone CSMA simulator for inreasing number of nodes and different network conditions over configurable monte-carlo simulations
+- Run Standalone TDMA simulator for inreasing number of nodes and different network conditions over configurable monte-carlo simulations
+- Run DynaMAC comparison for a given network condition and get a comparison of performance across TDMA only, CSMA only , DynaMAC with eplison greedy approach and DynaMAC with softmax approach
