@@ -128,7 +128,7 @@ def generate_xput_plots(num_p=5, num_n_start=5, num_n_delta=5, num_n_end=50, mon
                      xputs_mean+xputs_var, alpha=0.5)
     plt.grid(True)
     plt.xlabel('Number of Nodes')
-    plt.ylabel('Normalized Throughput')
+    plt.ylabel('Throughput (pkts/sec)')
     plt.legend(loc='lower right')
     plt.title('CSMA: Throughput vs Number of Nodes')
     fig1.show()

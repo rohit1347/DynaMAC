@@ -1,5 +1,6 @@
 # DynaMAC
 ECE257B Project - ML based MAC selection protocol
+___
 
 # Description
 This repo contains the simulation code used for simulating and evaluating DynaMAC - an RL based MAC Selection Engine. 
@@ -10,13 +11,13 @@ Python with numpy installed
 # Code
 The main functions involved in simulating DynaMAC are:
 
-- 'generate_events'
-- 'csma_simulator'
-- 'tdma_simulator'
-- 'qlearning_egreedy'
-- 'qlearning_boltzmann'
-- 'decision_final'
-- 'Dynamac_SOMAC_test'
+- `generate_events`
+- `csma_simulator`
+- `tdma_simulator`
+- `qlearning_egreedy`
+- `qlearning_boltzmann`
+- `decision_final`
+- `Dynamac_SOMAC_test`
 
 # Steps to run the code
 - Open dynamac_switch_test.py

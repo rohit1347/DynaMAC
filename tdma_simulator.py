@@ -122,4 +122,59 @@ def tdma_simulator(events=None, frame_duration=2, num_slots=10, slot_time=0.05, 
     print("------------------------------")
     return throughput, average_latency, events_post
 
+
 # test scripts
+def get_TDMA_plots(num_packets=20, frame_duration=5, start_time=0, packet_time=0.01, num_slots=5, num_sims=1):
+    """[summary]
+
+    Keyword Arguments:
+        num_packets {int} -- [description] (default: {20})
+        frame_duration {int} -- [description] (default: {5})
+        start_time {int} -- [description] (default: {0})
+        packet_time {float} -- [description] (default: {0.01})
+        num_slots {int} -- Controls the number of nodes in the experiment (default: {5})
+        num_sims {int} -- Number of monte carlo runs (default: {1})
+    """
+    throughput = np.zeros((num_slots, num_sims))
+    avg_latency = np.zeros((num_slots, num_sims))
+    num_nodes = np.linspace(1, num_slots, num_slots)
+    sim_end_time = start_time + frame_duration
+    for sim_node_iter in range(num_slots):
+        for mont_iter in range(num_sims):
+            events = generate_events(num_nodes=int(num_nodes[sim_node_iter]), num_packets=num_packets,
+                                     sim_end_time=sim_end_time, round=2)
+            throughput[sim_node_iter, mont_iter], avg_latency[sim_node_iter, mont_iter], _ = tdma_simulator(
+                events=events, num_slots=num_slots, frame_duration=frame_duration, slot_time=5*packet_time, printFlag=0)
+
+    avg_th_user = np.mean(throughput, axis=1)
+    var_th_user = np.var(throughput, axis=1)
+    avg_latency_user = np.mean(avg_latency, axis=1)
+    var_latency_user = np.var(avg_latency, axis=1)
+    print(avg_th_user)
+    print(var_th_user)
+    print(avg_latency_user)
+    print(var_latency_user)
+    fig = plt.figure(num=1, figsize=(9, 6))
+    # plt.plot(num_nodes,th_user)
+    plt.errorbar(num_nodes, avg_th_user,
+                 yerr=var_th_user, label='Throughput')
+    plt.fill_between(num_nodes, avg_th_user-var_th_user,
+                     avg_th_user+var_th_user, alpha=0.5)
+    plt.xlabel('Number of Nodes')
+    plt.ylabel('Throughput (pkt/sec)')
+    plt.legend(loc='lower right')
+    plt.title('TDMA: Throughput vs Number of Nodes')
+    plt.grid(True)
+    plt.show()
+
+    fig = plt.figure(num=2, figsize=(9, 6))
+    plt.errorbar(num_nodes, avg_latency_user,
+                 yerr=var_latency_user, label='Latency', color='red')
+    plt.fill_between(num_nodes, avg_latency_user-var_latency_user,
+                     avg_latency_user+var_latency_user, facecolor='r', alpha=0.5)
+    plt.xlabel('Number of Nodes')
+    plt.ylabel('latency (seconds)')
+    plt.legend(loc='lower right')
+    plt.title('TDMA: Latency vs Number of Nodes')
+    plt.grid(True)
+    plt.show()
